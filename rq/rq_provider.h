@@ -24,8 +24,16 @@
 #include "rq_snapcollector.h"
 #elif defined RQ_BUNDLE
 #include "rq_bundle.h"
+#elif defined RQ_BUNDLE_RDTSC
+#include "rq_bundle_rdtsc.h"
+#elif defined RQ_BUNDLE_RDTSCP
+#include "rq_bundle_rdtscp.h"
 #elif defined RQ_VCAS
 #include "rq_vcas.h"
+#elif defined RQ_VCAS_RDTSC
+#include "rq_vcas_rdtsc.h"
+#elif defined RQ_VCAS_RDTSCP
+#include "rq_vcas_rdtscp.h"
 #else
 #error NO RQ PROVIDER DEFINED
 #endif

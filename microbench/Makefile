@@ -93,34 +93,55 @@ machine=$(shell hostname)
 all: abtree bslack bst lazylist lflist citrus rlu skiplistlock bundle ubundle
 
 .PHONY: bundle rbundle
-bundle: citrus.rq_bundle skiplistlock.rq_bundle lazylist.rq_bundle
+bundle: lazylist_bundle skiplistlock_bundle citrus_bundle bst_bundle
+lazylist_bundle: lazylist.rq_bundle.ts lazylist.rq_bundle.rdtsc lazylist.rq_bundle.rdtscp
+skiplistlock_bundle: skiplistlock.rq_bundle.ts skiplistlock.rq_bundle.rdtsc skiplistlock.rq_bundle.rdtscp
+citrus_bundle: citrus.rq_bundle.ts citrus.rq_bundle.rdtsc citrus.rq_bundle.rdtscp
+bst_bundle: bst.rq_bundle.ts bst.rq_bundle.rdtsc bst.rq_bundle.rdtscp
 rbundle: citrus.rq_rbundle skiplistlock.rq_rbundle lazylist.rq_rbundle
 bundlerq: citrus.rq_bundlerq skiplistlock.rq_bundlerq lazylist.rq_bundlerq
 
+.PHONY: vcas
+vcas: lazylist_vcas skiplistlock_vcas citrus_vcas bst_vcas
+lazylist_vcas: lazylist.rq_vcas.ts lazylist.rq_vcas.rdtsc lazylist.rq_vcas.rdtscp
+skiplistlock_vcas: skiplistlock.rq_vcas.ts skiplistlock.rq_vcas.rdtsc skiplistlock.rq_vcas.rdtscp
+citrus_vcas: citrus.rq_vcas.ts citrus.rq_vcas.rdtsc citrus.rq_vcas.rdtscp
+bst_vcas: bst.rq_vcas.ts bst.rq_vcas.rdtsc bst.rq_vcas.rdtscp
+
 BUNDLE_FLAGS = -DRQ_BUNDLE -DBUNDLE_LINKED_BUNDLE 
+BUNDLE_FLAGS_RDTSC = -DRQ_BUNDLE_RDTSC -DBUNDLE_LINKED_BUNDLE
+BUNDLE_FLAGS_RDTSCP = -DRQ_BUNDLE_RDTSCP -DBUNDLE_LINKED_BUNDLE 
 
 thispath=
 
-.PHONY: lazylist.rq_lockfree lazylist.rq_rwlock lazylist.rq_unsafe lazylist.rq_bundle lazylist.rq_bundlerq lazylist.rq_vcas lazylist.rq_rlu
-lazylist: lazylist.rq_lockfree lazylist.rq_rwlock lazylist.rq_unsafe lazylist.rq_bundle lazylist.rq_bundlerq lazylist.rq_vcas lazylist.rq_rlu
+.PHONY: lazylist.rq_lockfree lazylist.rq_rwlock lazylist.rq_unsafe lazylist.rq_bundle.ts lazylist.rq_bundle.rdtsc lazylist.rq_bundle.rdtscp lazylist.rq_bundlerq lazylist.rq_rlu lazylist.rq_vcas.ts lazylist.rq_vcas.rdtsc lazylist.rq_vcas.rdtscp
+lazylist: lazylist.rq_lockfree lazylist.rq_rwlock lazylist.rq_unsafe lazylist.rq_bundle.ts lazylist.rq_bundle.rdtsc lazylist.rq_bundle.rdtscp lazylist.rq_bundlerq lazylist.rq_rlu lazylist.rq_vcas.ts lazylist.rq_vcas.rdtsc lazylist.rq_vcas.rdtscp
 lazylist.rq_lockfree:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DLAZYLIST -DRQ_LOCKFREE $(pinning) $(thispath)main.cpp $(LDFLAGS)
 lazylist.rq_rwlock:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DLAZYLIST -DRQ_RWLOCK $(pinning) $(thispath)main.cpp $(LDFLAGS)
 lazylist.rq_unsafe:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DUNSAFE_LIST $(pinning) $(thispath)main.cpp $(LDFLAGS)
-lazylist.rq_bundle:
+lazylist.rq_bundle.ts:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_LIST ${BUNDLE_FLAGS} $(pinning) $(thispath)main.cpp $(LDFLAGS)
+lazylist.rq_bundle.rdtsc:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_LIST ${BUNDLE_FLAGS_RDTSC} $(pinning) $(thispath)main.cpp $(LDFLAGS)
+lazylist.rq_bundle.rdtscp:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_LIST ${BUNDLE_FLAGS_RDTSCP} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 lazylist.rq_bundlerq:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_LIST ${BUNDLE_FLAGS} -DBUNDLE_RQTS $(pinning) $(thispath)main.cpp $(LDFLAGS)
-lazylist.rq_vcas:
+lazylist.rq_vcas.ts:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_LAZYLIST -DRQ_VCAS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+lazylist.rq_vcas.rdtsc:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_LAZYLIST -DRQ_VCAS_RDTSC $(pinning) $(thispath)main.cpp $(LDFLAGS)
+lazylist.rq_vcas.rdtscp:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_LAZYLIST -DRQ_VCAS_RDTSCP $(pinning) $(thispath)main.cpp $(LDFLAGS)
 lazylist.rq_rlu:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DRLU_LIST $(pinning) $(thispath)main.cpp $(thispath)../rlu/rlu.cpp $(LDFLAGS)
 
 
-.PHONY: skiplistlock skiplistlock.rq_lockfree skiplistlock.rq_rwlock skiplistlock.rq_unsafe skiplistlock.rq_snapcollector skiplistlock.rq_bundle skiplistlock.rq_bundlerq skiplistlock.rq_vcas
-skiplistlock: skiplistlock skiplistlock.rq_lockfree skiplistlock.rq_rwlock skiplistlock.rq_unsafe skiplistlock.rq_snapcollector skiplistlock.rq_bundle skiplistlock.rq_bundlerq skiplistlock.rq_vcas
+.PHONY: skiplistlock skiplistlock.rq_lockfree skiplistlock.rq_rwlock skiplistlock.rq_unsafe skiplistlock.rq_snapcollector skiplistlock.rq_bundle.ts skiplistlock.rq_bundle.rdtsc skiplistlock.rq_bundle.rdtscp skiplistlock.rq_bundlerq skiplistlock.rq_vcas.ts skiplistlock.rq_vcas.rdtsc skiplistlock.rq_vcas.rdtscp
+skiplistlock: skiplistlock skiplistlock.rq_lockfree skiplistlock.rq_rwlock skiplistlock.rq_unsafe skiplistlock.rq_snapcollector skiplistlock.rq_bundle.ts skiplistlock.rq_bundle.rdtsc skiplistlock.rq_bundle.rdtscp skiplistlock.rq_bundlerq skiplistlock.rq_vcas.ts skiplistlock.rq_vcas.rdtsc skiplistlock.rq_vcas.rdtscp
 skiplistlock.rq_lockfree:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DSKIPLISTLOCK -DRQ_LOCKFREE $(pinning) $(thispath)main.cpp $(LDFLAGS)
 skiplistlock.rq_rwlock:
@@ -129,40 +150,67 @@ skiplistlock.rq_unsafe:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DUNSAFE_SKIPLIST $(pinning) $(thispath)main.cpp $(LDFLAGS)
 skiplistlock.rq_snapcollector:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DSKIPLISTLOCK -DRQ_SNAPCOLLECTOR $(pinning) $(thispath)main.cpp $(LDFLAGS)
-skiplistlock.rq_bundle:
+skiplistlock.rq_bundle.ts:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_SKIPLIST ${BUNDLE_FLAGS} $(pinning) $(thispath)main.cpp $(LDFLAGS)
+skiplistlock.rq_bundle.rdtsc:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_SKIPLIST ${BUNDLE_FLAGS_RDTSC} $(pinning) $(thispath)main.cpp $(LDFLAGS)
+skiplistlock.rq_bundle.rdtscp:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_SKIPLIST ${BUNDLE_FLAGS_RDTSCP} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 skiplistlock.rq_bundlerq:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_SKIPLIST ${BUNDLE_FLAGS} -DBUNDLE_RQTS $(pinning) $(thispath)main.cpp $(LDFLAGS)
-skiplistlock.rq_vcas:
+skiplistlock.rq_vcas.ts:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_SKIPLIST -DRQ_VCAS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+skiplistlock.rq_vcas.rdtsc:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_SKIPLIST -DRQ_VCAS_RDTSC $(pinning) $(thispath)main.cpp $(LDFLAGS)
+skiplistlock.rq_vcas.rdtscp:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_SKIPLIST -DRQ_VCAS_RDTSCP $(pinning) $(thispath)main.cpp $(LDFLAGS)
 
-# .PHONY: bst bst.rq_lockfree bst.rq_rwlock bst.rq_htm_rwlock bst.rq_unsafe bst.rq_vcas
-# bst: bst.rq_lockfree bst.rq_rwlock bst.rq_htm_rwlock bst.rq_unsafe bst.rq_vcas
-# bst.rq_lockfree:
-# 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBST -DRQ_LOCKFREE $(pinning) $(thispath)main.cpp $(LDFLAGS)
-# bst.rq_rwlock:
-# 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(;ilesuffix).out $(xargs) -DBST -DRQ_RWLOCK $(pinning) $(thispath)main.cpp $(LDFLAGS)
-# # bst.rq_htm_rwlock:
-# # 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBST -DRQ_HTM_RWLOCK $(pinning) $(thispath)main.cpp $(LDFLAGS)
-# bst.rq_unsafe:
-# 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBST -DRQ_UNSAFE $(pinning) $(thispath)main.cpp $(LDFLAGS)
-# bst.rq_vcas:
-# 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCASBST -DRQ_VCAS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+.PHONY: bst bst.rq_lockfree bst.rq_rwlock bst.rq_htm_rwlock bst.rq_unsafe bst.rq_vcas.ts bst.rq_vcas.rdtsc bst.rq_vcas.rdtscp bst.rq_bundle.ts bst.rq_bundle.rdtsc bst.rq_bundle.rdtscp
+bst: bst.rq_lockfree bst.rq_rwlock bst.rq_htm_rwlock bst.rq_unsafe bst.rq_vcas.ts bst.rq_vcas.rdtsc bst.rq_vcas.rdtscp bst.rq_bundle.ts bst.rq_bundle.rdtsc bst.rq_bundle.rdtscp
+bst.rq_lockfree:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBST -DRQ_LOCKFREE $(pinning) $(thispath)main.cpp $(LDFLAGS)
+bst.rq_rwlock:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(;ilesuffix).out $(xargs) -DBST -DRQ_RWLOCK $(pinning) $(thispath)main.cpp $(LDFLAGS)
+bst.rq_htm_rwlock:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBST -DRQ_HTM_RWLOCK $(pinning) $(thispath)main.cpp $(LDFLAGS)
+bst.rq_unsafe:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBST -DRQ_UNSAFE $(pinning) $(thispath)main.cpp $(LDFLAGS)
+bst.rq_bundle.ts:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_BST ${BUNDLE_FLAGS} $(pinning) $(thispath)main.cpp $(LDFLAGS)
+bst.rq_bundle.rdtsc:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_BST ${BUNDLE_FLAGS_RDTSC} $(pinning) $(thispath)main.cpp $(LDFLAGS)
+bst.rq_bundle.rdtscp:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_BST ${BUNDLE_FLAGS_RDTSCP} $(pinning) $(thispath)main.cpp $(LDFLAGS)
+bst.rq_vcas.ts:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCASBST -DRQ_VCAS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+bst.rq_vcas.rdtsc:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCASBST -DRQ_VCAS_RDTSC $(pinning) $(thispath)main.cpp $(LDFLAGS)
+bst.rq_vcas.rdtscp:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCASBST -DRQ_VCAS_RDTSCP $(pinning) $(thispath)main.cpp $(LDFLAGS)
 
-.PHONY: citrus citrus.rq_lockfree citrus.rq_rwlock citrus.rq_htm_rwlock citrus.rq_unsafe citrus.rq_bundle citrus.rq_rbundle citrus.rq_bundlerq citrus.rq_tsrbundle citrus.rq_rcbundle citrus.rq_tsrcbundle citrus.rq_vcas 
-citrus: citrus.rq_lockfree citrus.rq_rwlock citrus.rq_htm_rwlock citrus.rq_unsafe citrus.rq_bundle citrus.rq_rbundle citrus.rq_bundlerq citrus.rq_tsrbundle citrus.rq_rcbundle citrus.rq_tsrcbundle citrus.rq_vcas
+
+.PHONY: citrus citrus.rq_lockfree citrus.rq_rwlock citrus.rq_htm_rwlock citrus.rq_unsafe citrus.rq_bundle.ts citrus.rq_bundle.rdtsc citrus.rq_bundle.rdtscp citrus.rq_rbundle citrus.rq_bundlerq citrus.rq_tsrbundle citrus.rq_rcbundle citrus.rq_tsrcbundle citrus.rq_vcas.ts citrus.rq_vcas.rdtsc citrus.rq_vcas.rdtscp
+citrus: citrus.rq_lockfree citrus.rq_rwlock citrus.rq_htm_rwlock citrus.rq_unsafe citrus.rq_bundle.ts citrus.rq_bundle.rdtsc citrus.rq_bundle.rdtscp citrus.rq_rbundle citrus.rq_bundlerq citrus.rq_tsrbundle citrus.rq_rcbundle citrus.rq_tsrcbundle citrus.rq_vcas.ts citrus.rq_vcas.rdtsc citrus.rq_vcas.rdtscp
 citrus.rq_lockfree:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DCITRUS -DRQ_LOCKFREE $(pinning) $(thispath)main.cpp $(LDFLAGS)
 citrus.rq_rwlock:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DCITRUS -DRQ_RWLOCK $(pinning) $(thispath)main.cpp $(LDFLAGS)
 citrus.rq_unsafe:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DUNSAFE_CITRUS $(pinning) $(thispath)main.cpp $(LDFLAGS)
-citrus.rq_bundle:
+citrus.rq_bundle.ts:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_CITRUS ${BUNDLE_FLAGS} $(pinning) $(thispath)main.cpp $(LDFLAGS)
+citrus.rq_bundle.rdtsc:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_CITRUS ${BUNDLE_FLAGS_RDTSC} $(pinning) $(thispath)main.cpp $(LDFLAGS)
+citrus.rq_bundle.rdtscp:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_CITRUS ${BUNDLE_FLAGS_RDTSCP} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 citrus.rq_bundlerq:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_CITRUS ${BUNDLE_FLAGS} -DBUNDLE_RQTS$(pinning) $(thispath)main.cpp $(LDFLAGS)
-citrus.rq_vcas:
+citrus.rq_vcas.ts:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_CITRUS -DRQ_VCAS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+citrus.rq_vcas.rdtsc:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_CITRUS -DRQ_VCAS_RDTSC $(pinning) $(thispath)main.cpp $(LDFLAGS)
+citrus.rq_vcas.rdtscp:
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_CITRUS -DRQ_VCAS_RDTSCP $(pinning) $(thispath)main.cpp $(LDFLAGS)
 
 .PHONY: rlu lazylist.rq_rlu citrus.rq_rlu
 rlu: lazylist.rq_rlu citrus.rq_rlu
