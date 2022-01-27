@@ -19,7 +19,6 @@ class TimestampProvider {
         #ifdef RQ_BUNDLE
             curr_timestamp_ = BUNDLE_MIN_TIMESTAMP;
         #endif
-        // TODO: do something else if rdtsc/p? or just do nothing?
         }
 
         ~TimestampProvider() {}
