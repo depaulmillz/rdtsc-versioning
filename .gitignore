@@ -19,3 +19,6 @@ macrobench/data*
 *.csv
 __pycache__*
 macrobench/compiling*
+log
+lib
+executables

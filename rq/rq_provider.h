@@ -22,12 +22,8 @@
 #include "rq_unsafe.h"
 #elif defined RQ_SNAPCOLLECTOR
 #include "rq_snapcollector.h"
-#elif defined RQ_BUNDLE
+#elif (defined RQ_BUNDLE) || (defined RQ_BUNDLE_RDTSC) || (defined RQ_BUNDLE_RDTSCP)
 #include "rq_bundle.h"
-#elif defined RQ_BUNDLE_RDTSC
-#include "rq_bundle_rdtsc.h"
-#elif defined RQ_BUNDLE_RDTSCP
-#include "rq_bundle_rdtscp.h"
 #elif defined RQ_VCAS
 #include "rq_vcas.h"
 #elif defined RQ_VCAS_RDTSC

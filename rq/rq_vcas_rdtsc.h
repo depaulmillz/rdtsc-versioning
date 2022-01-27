@@ -3,7 +3,6 @@
 #define RQ_VCAS_H
 
 #include "rq_debugging.h"
-#include <rwlock.h>
 #include <pthread.h>
 #include <atomic>
 #include <unordered_set>
@@ -14,8 +13,6 @@
 
 #define CAS(addr, expected_value, new_value) \
   __sync_bool_compare_and_swap((addr), (expected_value), (new_value))
-
-static thread_local int backoff_amt = 1;
 
 #ifdef NVCAS_OPTIMIZATION
 // Encodes a vCAS object
@@ -58,13 +55,6 @@ class RQProvider {
       0,
   };
 
-  inline void backoff(int amount) {
-    if (amount == 0) return;
-    volatile long long sum = 0;
-    int limit = amount;
-    for (int i = 0; i < limit; i++) sum += i;
-  }
-
   // use RDTSC to get the timestamp
   inline long long getTS() {
       unsigned long long cycles_low, cycles_high;
@@ -82,7 +72,6 @@ class RQProvider {
   template <class T>
   inline void initTS(T node) {
     if (node->ts == TBD) {
-      // node->ts = 0;
       long long curTS = getTS();
       CAS(&(node->ts), TBD, curTS);
     }

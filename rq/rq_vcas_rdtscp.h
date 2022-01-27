@@ -14,8 +14,6 @@
 #define CAS(addr, expected_value, new_value) \
   __sync_bool_compare_and_swap((addr), (expected_value), (new_value))
 
-static thread_local int backoff_amt = 1;
-
 #ifdef NVCAS_OPTIMIZATION
 // Encodes a vCAS object
 template <typename T>
@@ -75,7 +73,6 @@ class RQProvider {
   template <class T>
   inline void initTS(T node) {
     if (node->ts == TBD) {
-      // node->ts = 0;
       long long curTS = getTS();
       CAS(&(node->ts), TBD, curTS);
     }
