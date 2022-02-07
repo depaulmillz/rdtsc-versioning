@@ -3,7 +3,7 @@
 #define RQ_VCAS_H
 
 #include "rq_debugging.h"
-#include <rwlock.h>
+#include "timestamp_provider.h"
 #include <pthread.h>
 #include <atomic>
 #include <unordered_set>
@@ -12,10 +12,12 @@
 #define casword_t uintptr_t
 #endif
 
+#if not defined(TS_PROVIDER)
+#define TS_PROVIDER VcasTimestamp
+#endif
+
 #define CAS(addr, expected_value, new_value) \
   __sync_bool_compare_and_swap((addr), (expected_value), (new_value))
-
-static thread_local int backoff_amt = 1;
 
 #ifdef NVCAS_OPTIMIZATION
 // Encodes a vCAS object
@@ -49,56 +51,24 @@ class RQProvider {
 
   const int NUM_PROCESSES;
   volatile char padding0[PREFETCH_SIZE_BYTES];
-  volatile long long timestamp = 1;
   volatile char padding1[PREFETCH_SIZE_BYTES];
-  RWLock rwlock;
   volatile char padding2[PREFETCH_SIZE_BYTES];
   __rq_thread_data* threadData;
 
   DataStructure* ds;
   RecordManager* const recmgr;
+  TS_PROVIDER ts_provider;
 
   int init[MAX_TID_POW2] = {
       0,
   };
-
-  inline void backoff(int amount) {
-    if (amount == 0) return;
-    volatile long long sum = 0;
-    int limit = amount;
-    for (int i = 0; i < limit; i++) sum += i;
-  }
-
-  inline long long takeSnapshot(const int tid) {
-    // return __sync_fetch_and_add(&timestamp, 1);
-    long long ts = timestamp;
-    backoff(backoff_amt);
-    std::atomic_thread_fence(std::memory_order_seq_cst);
-    if (ts == timestamp) {
-      // if(CAS(&timestamp, ts, ts+1))
-      if (__sync_fetch_and_add(&timestamp, 1) == ts)
-        backoff_amt /= 2;
-      else
-        backoff_amt *= 2;
-    } else {
-    }
-    if (backoff_amt < 1) backoff_amt = 1;
-    if (backoff_amt > 512) backoff_amt = 512;
-      // else backoff_amount /= 2;
-
-#if defined(VCAS_STATS)
-      // nodesSeen.clear();
-#endif
-    return ts;
-  }
 
   // Camera S;
 
   template <class T>
   inline void initTS(T node) {
     if (node->ts == TBD) {
-      // node->ts = 0;
-      long long curTS = timestamp;
+      long long curTS = ts_provider.Read();
       CAS(&(node->ts), TBD, curTS);
     }
   }
@@ -123,10 +93,6 @@ class RQProvider {
     delete[] threadData;
     DEBUG_DEINIT_RQPROVIDER(NUM_PROCESSES);
   }
-
-  // long long debug_getTimestamp() {
-  //     return timestamp;
-  // }
 
   // invoke before a given thread can perform any rq_functions
   void initThread(const int tid) {
@@ -341,8 +307,7 @@ class RQProvider {
 
   // invoke at the start of each traversal
   inline int traversal_start(const int tid) {
-    // versionNodesTraversed = 0;
-    return takeSnapshot(tid);
+    return ts_provider.Advance();
   }
 
   // invoke each time a traversal visits a node with a key in the desired range:
@@ -532,8 +497,7 @@ class RQProvider {
 
   // invoke at the start of each traversal
   inline int traversal_start(const int tid) {
-    // versionNodesTraversed = 0;
-    return takeSnapshot(tid);
+    return ts_provider.Advance();
   }
 
   // invoke each time a traversal visits a node with a key in the desired range:

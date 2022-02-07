@@ -90,7 +90,7 @@ LDFLAGS += -lpapi
 
 machine=$(shell hostname)
 
-all: abtree bslack bst lazylist lflist citrus rlu skiplistlock bundle ubundle
+all: bst lazylist citrus rlu skiplistlock bundle vcas ubundle
 
 .PHONY: bundle rbundle
 bundle: lazylist_bundle skiplistlock_bundle citrus_bundle bst_bundle
@@ -108,9 +108,13 @@ skiplistlock_vcas: skiplistlock.rq_vcas.ts skiplistlock.rq_vcas.rdtsc skiplistlo
 citrus_vcas: citrus.rq_vcas.ts citrus.rq_vcas.rdtsc citrus.rq_vcas.rdtscp
 bst_vcas: bst.rq_vcas.ts bst.rq_vcas.rdtsc bst.rq_vcas.rdtscp
 
-BUNDLE_FLAGS = -DRQ_BUNDLE -DBUNDLE_LINKED_BUNDLE 
-BUNDLE_FLAGS_RDTSC = -DRQ_BUNDLE_RDTSC -DBUNDLE_LINKED_BUNDLE
-BUNDLE_FLAGS_RDTSCP = -DRQ_BUNDLE_RDTSCP -DBUNDLE_LINKED_BUNDLE 
+BUNDLE_FLAGS = -DRQ_BUNDLE -DBUNDLE_LINKED_BUNDLE -DTS_PROVIDER=BundlingTimestamp
+BUNDLE_FLAGS_RDTSC = -DRQ_BUNDLE -DBUNDLE_LINKED_BUNDLE -DTS_PROVIDER=RdtscTimestamp
+BUNDLE_FLAGS_RDTSCP = -DRQ_BUNDLE -DBUNDLE_LINKED_BUNDLE -DTS_PROVIDER=RdtscpTimestamp
+
+VCAS_FLAGS = -DRQ_VCAS -DTS_PROVIDER=VcasTimestamp
+VCAS_FLAGS_RDTSC = -DRQ_VCAS -DTS_PROVIDER=RdtscTimestamp
+VCAS_FLAGS_RDTSCP = -DRQ_VCAS -DTS_PROVIDER=RdtscpTimestamp
 
 thispath=
 
@@ -131,11 +135,11 @@ lazylist.rq_bundle.rdtscp:
 lazylist.rq_bundlerq:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_LIST ${BUNDLE_FLAGS} -DBUNDLE_RQTS $(pinning) $(thispath)main.cpp $(LDFLAGS)
 lazylist.rq_vcas.ts:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_LAZYLIST -DRQ_VCAS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_LAZYLIST ${VCAS_FLAGS} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 lazylist.rq_vcas.rdtsc:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_LAZYLIST -DRQ_VCAS_RDTSC $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_LAZYLIST ${VCAS_FLAGS_RDTSC} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 lazylist.rq_vcas.rdtscp:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_LAZYLIST -DRQ_VCAS_RDTSCP $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_LAZYLIST ${VCAS_FLAGS_RDTSCP} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 lazylist.rq_rlu:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DRLU_LIST $(pinning) $(thispath)main.cpp $(thispath)../rlu/rlu.cpp $(LDFLAGS)
 
@@ -159,11 +163,11 @@ skiplistlock.rq_bundle.rdtscp:
 skiplistlock.rq_bundlerq:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_SKIPLIST ${BUNDLE_FLAGS} -DBUNDLE_RQTS $(pinning) $(thispath)main.cpp $(LDFLAGS)
 skiplistlock.rq_vcas.ts:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_SKIPLIST -DRQ_VCAS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_SKIPLIST ${VCAS_FLAGS} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 skiplistlock.rq_vcas.rdtsc:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_SKIPLIST -DRQ_VCAS_RDTSC $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_SKIPLIST ${VCAS_FLAGS_RDTSC} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 skiplistlock.rq_vcas.rdtscp:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_SKIPLIST -DRQ_VCAS_RDTSCP $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_SKIPLIST ${VCAS_FLAGS_RDTSCP} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 
 .PHONY: bst bst.rq_lockfree bst.rq_rwlock bst.rq_htm_rwlock bst.rq_unsafe bst.rq_vcas.ts bst.rq_vcas.rdtsc bst.rq_vcas.rdtscp bst.rq_bundle.ts bst.rq_bundle.rdtsc bst.rq_bundle.rdtscp
 bst: bst.rq_lockfree bst.rq_rwlock bst.rq_htm_rwlock bst.rq_unsafe bst.rq_vcas.ts bst.rq_vcas.rdtsc bst.rq_vcas.rdtscp bst.rq_bundle.ts bst.rq_bundle.rdtsc bst.rq_bundle.rdtscp
@@ -182,11 +186,11 @@ bst.rq_bundle.rdtsc:
 bst.rq_bundle.rdtscp:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_BST ${BUNDLE_FLAGS_RDTSCP} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 bst.rq_vcas.ts:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCASBST -DRQ_VCAS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCASBST ${VCAS_FLAGS} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 bst.rq_vcas.rdtsc:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCASBST -DRQ_VCAS_RDTSC $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCASBST ${VCAS_FLAGS_RDTSC} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 bst.rq_vcas.rdtscp:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCASBST -DRQ_VCAS_RDTSCP $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCASBST ${VCAS_FLAGS_RDTSCP} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 
 
 .PHONY: citrus citrus.rq_lockfree citrus.rq_rwlock citrus.rq_htm_rwlock citrus.rq_unsafe citrus.rq_bundle.ts citrus.rq_bundle.rdtsc citrus.rq_bundle.rdtscp citrus.rq_rbundle citrus.rq_bundlerq citrus.rq_tsrbundle citrus.rq_rcbundle citrus.rq_tsrcbundle citrus.rq_vcas.ts citrus.rq_vcas.rdtsc citrus.rq_vcas.rdtscp
@@ -206,11 +210,11 @@ citrus.rq_bundle.rdtscp:
 citrus.rq_bundlerq:
 	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_CITRUS ${BUNDLE_FLAGS} -DBUNDLE_RQTS$(pinning) $(thispath)main.cpp $(LDFLAGS)
 citrus.rq_vcas.ts:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_CITRUS -DRQ_VCAS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_CITRUS ${VCAS_FLAGS} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 citrus.rq_vcas.rdtsc:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_CITRUS -DRQ_VCAS_RDTSC $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_CITRUS ${VCAS_FLAGS_RDTSC} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 citrus.rq_vcas.rdtscp:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_CITRUS -DRQ_VCAS_RDTSCP $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DVCAS_CITRUS ${VCAS_FLAGS_RDTSCP} $(pinning) $(thispath)main.cpp $(LDFLAGS)
 
 .PHONY: rlu lazylist.rq_rlu citrus.rq_rlu
 rlu: lazylist.rq_rlu citrus.rq_rlu
@@ -220,11 +224,11 @@ citrus.rq_rlu:
 .PHONY: ubundle lazylist.rq_ubundle skiplistlock.rq_ubundle citrus.rq_ubundle 
 ubundle: lazylist.rq_ubundle skiplistlock.rq_ubundle citrus.rq_ubundle 
 lazylist.rq_ubundle:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_LIST $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_LIST -DTS_PROVIDER=BundlingTimestamp $(pinning) $(thispath)main.cpp $(LDFLAGS)
 skiplistlock.rq_ubundle:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_SKIPLIST -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_RESTARTS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_SKIPLIST -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_RESTARTS -DTS_PROVIDER=BundlingTimestamp $(pinning) $(thispath)main.cpp $(LDFLAGS)
 citrus.rq_ubundle:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_CITRUS $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_CITRUS -DTS_PROVIDER=BundlingTimestamp $(pinning) $(thispath)main.cpp $(LDFLAGS)
 
 ## The following is an experimental bundle implementation that uses a circular buffer instead of a linked list.
 # .PHONY: cbundle lazylist.rq_cbundle skiplistlock.rq_cbundle citrus.rq_cbundle

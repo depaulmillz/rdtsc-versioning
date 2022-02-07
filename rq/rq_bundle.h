@@ -8,6 +8,7 @@
 #pragma once
 #ifndef BUNDLE_RQ_BUNDLE_H
 #define BUNDLE_RQ_BUNDLE_H
+#endif
 
 #ifdef BUNDLE_CLEANUP_BACKGROUND
 #ifndef BUNDLE_CLEANUP_SLEEP
@@ -29,6 +30,11 @@
 #error NO BUNDLE TYPE DEFINED
 #endif
 
+#if not defined(TS_PROVIDER)
+#define TS_PROVIDER BundlingTimestamp
+#endif
+
+#include "common_bundle.h"
 #include "timestamp_provider.h"
 
 #define __THREAD_DATA_SIZE 1024
@@ -66,7 +72,7 @@ class RQProvider {
 
   DataStructure *ds_;
   RecordManager *const recmgr_;
-  TimestampProvider ts_provider;
+  TS_PROVIDER ts_provider;
 
   int init_[MAX_TID_POW2] = {
       0,
@@ -99,8 +105,8 @@ class RQProvider {
       rq_thread_data_[i].data.rq_flag = false;
     }
 
-// Launches a background thread to handle bundle entry cleanup.
-#ifdef BUNDLE_CLEANUP_BACKGROUND
+  // Launches a background thread to handle bundle entry cleanup.
+  #ifdef BUNDLE_CLEANUP_BACKGROUND
     cleanup_args_ = new cleanup_args{&stop_cleanup_, ds_, num_processes_ - 1};
     if (pthread_create(&cleanup_thread_, nullptr, cleanup_run,
                        (void *)cleanup_args_)) {
@@ -110,11 +116,11 @@ class RQProvider {
     std::stringstream ss;
     ss << "Cleanup started: 0x" << std::hex << cleanup_thread_ << std::endl;
     std::cout << ss.str() << std::flush;
-#endif
+  #endif
   }
 
   ~RQProvider() {
-#ifdef BUNDLE_CLEANUP_BACKGROUND
+  #ifdef BUNDLE_CLEANUP_BACKGROUND
     std::cout << "Stopping cleanup..." << std::endl << std::flush;
     stop_cleanup_ = true;
     if (pthread_join(cleanup_thread_, nullptr)) {
@@ -122,7 +128,7 @@ class RQProvider {
       exit(-1);
     }
     delete cleanup_args_;
-#endif
+  #endif
     delete[] rq_thread_data_;
   }
 
@@ -164,7 +170,7 @@ class RQProvider {
 
   // Creates a snapshot of the current state of active RQs.
   inline timestamp_t get_oldest_active_rq() {
-    timestamp_t oldest_active = ts_provider.loadTS();
+    timestamp_t oldest_active = ts_provider.Read();
     timestamp_t curr_rq;
     for (int i = 0; i < num_processes_; ++i) {
       while (rq_thread_data_[i].data.rq_flag == true)
@@ -193,38 +199,32 @@ class RQProvider {
   // Atomically increments the global timestamp and returns the new value to the
   // caller.
   inline timestamp_t get_update_lin_time(int tid) {
-#ifdef BUNDLE_RQTS
-    return ts_provider.loadTS();
-#elif defined(BUNDLE_UNSAFE_BUNDLE)
+  #ifdef BUNDLE_RQTS
+    return ts_provider.Read();
+  #elif defined(BUNDLE_UNSAFE_BUNDLE)
     return BUNDLE_MIN_TIMESTAMP;
-#else
-    return ts_provider.getNextTS();
-#endif
-#endif
+  #else
+    return ts_provider.Advance();
+  #endif
   }
 
   // Write the range query linearization time so updates do not recycle any
   // edges needed by this range query.
   inline timestamp_t start_traversal(int tid) {
-#if defined(BUNDLE_RQTS)
-// Reads drive timestamp.
-#if defined(BUNDLE_UPDATE_USES_CAS)
-    return ts_provider.updateTS_CAS();
-#else
+  #if defined(BUNDLE_RQTS)
+  // Reads drive timestamp.
     rq_thread_data_[tid].data.rq_flag.store(true, std::memory_order_acquire);
-    rq_thread_data_[tid].data.rq_lin_time = ts_provider.getNextTS() - 1; // TODO: why -1 / could this present any issues w rdtsc/p?
+    rq_thread_data_[tid].data.rq_lin_time = ts_provider.Advance() - 1; // TODO: this is for the original logical timestamp impl, not nec. clean (bc of epoch based things)
     rq_thread_data_[tid].data.rq_flag.store(false, std::memory_order_release);
     return rq_thread_data_[tid].data.rq_lin_time;
-#endif
-#elif defined(BUNDLE_UNSAFE_BUNDLE)
-  return BUNDLE_MIN_TIMESTAMP;
-
-#else
-  rq_thread_data_[tid].data.rq_flag.store(true, std::memory_order_acquire);
-  rq_thread_data_[tid].data.rq_lin_time = ts_provider.getTS();
-  rq_thread_data_[tid].data.rq_flag.store(false, std::memory_order_release);
-  return rq_thread_data_[tid].data.rq_lin_time;
-#endif
+  #elif defined(BUNDLE_UNSAFE_BUNDLE)
+    return BUNDLE_MIN_TIMESTAMP;
+  #else
+    rq_thread_data_[tid].data.rq_flag.store(true, std::memory_order_acquire);
+    rq_thread_data_[tid].data.rq_lin_time = ts_provider.Read();
+    rq_thread_data_[tid].data.rq_flag.store(false, std::memory_order_release);
+    return rq_thread_data_[tid].data.rq_lin_time;
+  #endif
   }
 
   // invoke each time a traversal visits a node with a key in the desired range:
@@ -248,17 +248,17 @@ class RQProvider {
       }
     }
     *startIndex = location;
-#if defined MICROBENCH
+  #if defined MICROBENCH
     assert(*startIndex <= RQSIZE);
-#endif
+  #endif
   }
 
   // Reset the range query linearization time so that updates may recycle an
   // edge we needed.
   inline void end_traversal(int tid) {
-#ifndef BUNDLE_UNSAFE_BUNDLE
+  #ifndef BUNDLE_UNSAFE_BUNDLE
     rq_thread_data_[tid].data.rq_lin_time = BUNDLE_NULL_TIMESTAMP;
-#endif
+  #endif
   }
 
   // Prepares bundles by calling prepare on each provided bundle-pointer pair.
@@ -273,9 +273,9 @@ class RQProvider {
     NodeType *curr_ptr = ptrs[0];
     while (curr_bundle != nullptr) {
       curr_bundle->prepare(curr_ptr);
-#ifdef BUNDLE_CLEANUP_UPDATE
+  #ifdef BUNDLE_CLEANUP_UPDATE
       curr_bundle->reclaimEntries(get_oldest_active_rq());
-#endif
+  #endif
       ++i;
       curr_bundle = bundles[i];
       curr_ptr = ptrs[i];
@@ -352,10 +352,9 @@ class RQProvider {
         // physical deletion will happen at the same time as logical deletion
         physical_deletion_succeeded(tid, deletedNodes);
       }
-#if defined USE_RQ_DEBUGGING
-      DEBUG_RECORD_UPDATE_CHECKSUM<K, V>(tid, ts, insertedNodes, deletedNodes,
-                                         ds);
-#endif
+  #if defined USE_RQ_DEBUGGING
+      DEBUG_RECORD_UPDATE_CHECKSUM<K, V>(tid, ts, insertedNodes, deletedNodes, ds);
+  #endif
     } else {
       if (!logicalDeletion) {
         // physical deletion will happen at the same time as logical deletion

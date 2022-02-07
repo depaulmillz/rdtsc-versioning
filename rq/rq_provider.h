@@ -22,14 +22,10 @@
 #include "rq_unsafe.h"
 #elif defined RQ_SNAPCOLLECTOR
 #include "rq_snapcollector.h"
-#elif (defined RQ_BUNDLE) || (defined RQ_BUNDLE_RDTSC) || (defined RQ_BUNDLE_RDTSCP)
+#elif defined RQ_BUNDLE
 #include "rq_bundle.h"
 #elif defined RQ_VCAS
 #include "rq_vcas.h"
-#elif defined RQ_VCAS_RDTSC
-#include "rq_vcas_rdtsc.h"
-#elif defined RQ_VCAS_RDTSCP
-#include "rq_vcas_rdtscp.h"
 #else
 #error NO RQ PROVIDER DEFINED
 #endif
