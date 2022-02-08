@@ -108,11 +108,11 @@ skiplistlock_vcas: skiplistlock.rq_vcas.ts skiplistlock.rq_vcas.rdtsc skiplistlo
 citrus_vcas: citrus.rq_vcas.ts citrus.rq_vcas.rdtsc citrus.rq_vcas.rdtscp
 bst_vcas: bst.rq_vcas.ts bst.rq_vcas.rdtsc bst.rq_vcas.rdtscp
 
-BUNDLE_FLAGS = -DRQ_BUNDLE -DBUNDLE_LINKED_BUNDLE -DTS_PROVIDER=BundlingTimestamp
+BUNDLE_FLAGS = -DRQ_BUNDLE -DBUNDLE_LINKED_BUNDLE -DTS_PROVIDER=BasicTimestamp
 BUNDLE_FLAGS_RDTSC = -DRQ_BUNDLE -DBUNDLE_LINKED_BUNDLE -DTS_PROVIDER=RdtscTimestamp
 BUNDLE_FLAGS_RDTSCP = -DRQ_BUNDLE -DBUNDLE_LINKED_BUNDLE -DTS_PROVIDER=RdtscpTimestamp
 
-VCAS_FLAGS = -DRQ_VCAS -DTS_PROVIDER=VcasTimestamp
+VCAS_FLAGS = -DRQ_VCAS -DTS_PROVIDER=BasicTimestamp
 VCAS_FLAGS_RDTSC = -DRQ_VCAS -DTS_PROVIDER=RdtscTimestamp
 VCAS_FLAGS_RDTSCP = -DRQ_VCAS -DTS_PROVIDER=RdtscpTimestamp
 
@@ -224,11 +224,11 @@ citrus.rq_rlu:
 .PHONY: ubundle lazylist.rq_ubundle skiplistlock.rq_ubundle citrus.rq_ubundle 
 ubundle: lazylist.rq_ubundle skiplistlock.rq_ubundle citrus.rq_ubundle 
 lazylist.rq_ubundle:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_LIST -DTS_PROVIDER=BundlingTimestamp $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_LIST -DTS_PROVIDER=BasicTimestamp $(pinning) $(thispath)main.cpp $(LDFLAGS)
 skiplistlock.rq_ubundle:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_SKIPLIST -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_RESTARTS -DTS_PROVIDER=BundlingTimestamp $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DBUNDLE_SKIPLIST -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_RESTARTS -DTS_PROVIDER=BasicTimestamp $(pinning) $(thispath)main.cpp $(LDFLAGS)
 citrus.rq_ubundle:
-	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_CITRUS -DTS_PROVIDER=BundlingTimestamp $(pinning) $(thispath)main.cpp $(LDFLAGS)
+	$(GPP) $(FLAGS) -o $(thispath)$(machine).$@$(filesuffix).out $(xargs) -DRQ_BUNDLE -DBUNDLE_UNSAFE_BUNDLE -DBUNDLE_CITRUS -DTS_PROVIDER=BasicTimestamp $(pinning) $(thispath)main.cpp $(LDFLAGS)
 
 ## The following is an experimental bundle implementation that uses a circular buffer instead of a linked list.
 # .PHONY: cbundle lazylist.rq_cbundle skiplistlock.rq_cbundle citrus.rq_cbundle

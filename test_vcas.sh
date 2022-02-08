@@ -2,11 +2,11 @@
 
 # multiple values okay
 threads="1 2 24 48 72 96 120 144 168 192"
-# SKIPLISTLOCK:
-benchs="luigi.skiplistlock.rq_vcas.ts.out luigi.skiplistlock.rq_vcas.rdtsc.out luigi.skiplistlock.rq_vcas.rdtscp.out"
-  # BST: benchs="luigi.bst.rq_vcas.rdtsc.out luigi.bst.rq_vcas.rdtscp.out luigi.bst.rq_vcas.ts.out"
-  # CITRUS: benchs="luigi.citrus.rq_vcas.rdtsc.out luigi.citrus.rq_vcas.rdtscp.out luigi.citrus.rq_vcas.ts.out"
-  # LAZYLIST: benchs="luigi.lazylist.rq_vcas.rdtsc.out luigi.lazylist.rq_vcas.rdtscp.out luigi.lazylist.rq_vcas.ts.out"
+  # SKIPLISTLOCK: benchs="luigi.skiplistlock.rq_vcas.ts.out luigi.skiplistlock.rq_vcas.rdtsc.out luigi.skiplistlock.rq_vcas.rdtscp.out"
+# BST:
+benchs="luigi.bst.rq_vcas.ts.out luigi.bst.rq_vcas.rdtsc.out luigi.bst.rq_vcas.rdtscp.out"
+  # CITRUS: benchs="luigi.citrus.rq_vcas.ts.out luigi.citrus.rq_vcas.rdtsc.out luigi.citrus.rq_vcas.rdtscp.out"
+  # LAZYLIST: benchs="luigi.lazylist.rq_vcas.ts.out luigi.lazylist.rq_vcas.rdtsc.out luigi.lazylist.rq_vcas.rdtscp.out"
 
 iterations="1 2 3 4 5"
 sizes="1000000"
