@@ -6,14 +6,16 @@
 
 source ../config.mk
 
-trials=3
+trials=5
 
-cols="%6s %12s %12s %12s %8s %6s %6s %8s %6s %6s %8s %12s %12s %12s %12s"
-headers="step machine ds alg k u rq rqsize nrq nwork trial throughput rqs updates finds"
+cols="%6s %12s %12s %12s %8s %8s %6s %6s %8s %6s %6s %8s %12s %12s %12s %12s"
+headers="step machine ds alg ts k u rq rqsize nrq nwork trial throughput rqs updates finds"
 machine=$(hostname)
+preloads="env LD_PRELOAD=../lib/libjemalloc.so TREE_MALLOC=../lib/libjemalloc.so"
+#preloads="LD_PRELOAD=../lib/libjemalloc.so"
 
 echo "Generating 'experiment_list.txt' according to settings in '/config.mk'..."
-./experiment_list_generate.sh
+#./experiment_list_generate.sh
 
 skip_steps_before=0
 skip_steps_after=1000000
@@ -38,7 +40,7 @@ else
   prefill_and_time="-p -t ${millis}"
 fi
 
-cnt2=$(cat experiment_list.txt | wc -l)
+cnt2=$(cat experiment_list.txt | wc -l) # number of lines to read in experiment_list.txt
 cnt2=$(expr $cnt2 \* $trials)
 echo "Performing $cnt2 trials..."
 
@@ -50,7 +52,8 @@ estimated_mins=$(expr $estimated_secs / 60)
 estimated_mins=$(expr $estimated_mins % 60)
 echo "Estimated running time: ${estimated_hours}h${estimated_mins}m" >$fsummary
 
-cnt1=10000
+#cnt1=10000
+cnt1=10531
 cnt2=$(expr $cnt2 + 10000)
 
 printf "${cols}\n" ${headers} >>$fsummary
@@ -58,7 +61,7 @@ cat $fsummary
 
 currdir=""
 
-while read u rq rqsize k nrq nwork ds alg; do
+while read u rq rqsize k nrq nwork ds alg ts; do
   # This is a hack to move all results from each experiment to its own folder.
   # The name of the folder to create will be in $ds and the new folder will be created under $outdir.
   if [ ${alg} == "prepare" ]; then
@@ -71,14 +74,15 @@ while read u rq rqsize k nrq nwork ds alg; do
     mkdir -p "${currdir}/${alg}"
   fi
 
+  # for the normal impl
   for ((trial = 0; trial < $trials; ++trial)); do
     cnt1=$(expr $cnt1 + 1)
     if ((cnt1 < skip_steps_before)); then continue; fi
     if ((cnt1 > skip_steps_after)); then continue; fi
 
-    fname="${currdir}/${alg}/step$cnt1.$machine.${ds}.${alg}.k$k.u$u.rq$rq.rqsize$rqsize.nrq$nrq.nwork$nwork.trial$trial.out"
+    fname="${currdir}/${alg}/step$cnt1.$machine.${ds}.${alg}.${ts}.k$k.u$u.rq$rq.rqsize$rqsize.nrq$nrq.nwork$nwork.trial$trial.out"
     # echo "FNAME=$fname"
-    cmd="./${machine}.${ds}.rq_${alg}.out -i $u -d $u -k $k -rq $rq -rqsize $rqsize ${prefill_and_time} -nrq $nrq -nwork $nwork ${pinning_policy}"
+    cmd="${preloads} ./${machine}.${ds}.rq_${alg}.${ts}.out -i $u -d $u -k $k -rq $rq -rqsize $rqsize ${prefill_and_time} -nrq $nrq -nwork $nwork ${pinning_policy}"
     if [[ "${allocator}" != "" ]]; then
       echo "env LD_PRELOAD=${allocator} TREE_MALLOC=${allocator} $cmd" >$fname
       env LD_PRELOAD=${allocator} TREE_MALLOC=${allocator} $cmd >>$fname
@@ -86,7 +90,7 @@ while read u rq rqsize k nrq nwork ds alg; do
       echo "$cmd" >$fname
       env $cmd >>$fname
     fi
-    printf "${cols}" $cnt1 $machine $ds $alg $k $u $rq $rqsize $nrq $nwork $trial "$(cat $fname | grep 'total throughput' | cut -d':' -f2)" "$(cat $fname | grep 'total rq' | cut -d':' -f2)" "$(cat $fname | grep 'total updates' | cut -d':' -f2)" "$(cat $fname | grep 'total find' | cut -d':' -f2)" >>$fsummary
+    printf "${cols}" $cnt1 $machine $ds $alg $ts $k $u $rq $rqsize $nrq $nwork $trial "$(cat $fname | grep 'total throughput' | cut -d':' -f2)" "$(cat $fname | grep 'total rq' | cut -d':' -f2)" "$(cat $fname | grep 'total updates' | cut -d':' -f2)" "$(cat $fname | grep 'total find' | cut -d':' -f2)" >>$fsummary
     tail -1 $fsummary
     echo
     printf "%120s          %s\n" "$fname" "$(head -1 $fname)" >>$fsummary
@@ -97,7 +101,7 @@ while read u rq rqsize k nrq nwork ds alg; do
       cat warnings.txt | tail -1
     fi
   done
-done <experiment_list.txt
+done < experiment_list.txt
 
 if [ "$(cat warnings.txt 2>/dev/null | wc -l)" -ne 0 ]; then
   echo "NOTE: THERE WERE WARNINGS. PRINTING THEM..."

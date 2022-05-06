@@ -1,4 +1,13 @@
+# confused about the "./microbench" vs "microbench"
+# confused in "make_csv.sh" about where the csv should be created, bc when it makes the second one it thinks the first csv
+#   is a data structure --> maybe it's fine and just ignored, but makes me think there could be something wrong here
+
+# NOTES
+# pass in many update rates, one RQ rate
+
+
 import plotly.graph_objects as go
+#from plotly import graph_objs as go
 from plot_util import *
 from plotly.subplots import make_subplots
 import math
@@ -128,10 +137,10 @@ def plot_workload(
         save_dir: Where plots are saved to.
     """
     reset_base_config()
-    csvfile = CSVFile.get_or_gen_csv(os.path.join(dirpath, "workloads"), ds,
-                                     ntrials)
+    path = os.path.join(dirpath, "workloads")
+    csvfile = CSVFile.get_or_gen_csv(path, ds, ntrials)
     csv = CSVFile(csvfile)
-
+    
     # Provide column labels for desired x and y axis
     x_axis = "wrk_threads"
     y_axis = "tot_thruput"
@@ -143,20 +152,20 @@ def plot_workload(
     ignore = ["ubundle"]
     algos = [k for k in plotconfig.keys() if k not in ignore]
 
+    # TODO: where are they determining what is happening lol (how to involve timestamp correctly in naming a line)
+
     # Read in data for each algorithm
-    count = 0
+    print("Getting data: ds={}, max_key={}, u_rate={}, rq_rate={}".format(
+            ds, max_key, u_rate, rq_rate))
     data = csv.getdata(["max_key", "u_rate", "rq_rate"],
-                       [max_key, u_rate, rq_rate])
+                       [max_key, u_rate, rq_rate]) # gets all data from the rows in first array which match the workload in the second
     data[y_axis] = data[y_axis] / 1000000
 
     if data.empty:
         report_empty("ds={}, max_key={}, u_rate={}".format(
             ds, max_key, u_rate))
+        print("No data.")
         return  # If no data to plot, then don't
-
-    if count == 0:
-        print('No data at given key range: ({}, {})'.format(ds, max_key))
-        return  # If no data to ploy, then don't
 
     # Plot layout configuration.
     x_axis_layout_["title"] = None
@@ -184,6 +193,7 @@ def plot_workload(
     layout_["height"] = 450
 
     fig = go.Figure(layout=layout_)
+    
     for a in algos:
         symbol_ = plotconfig[a]["symbol"]
         color_ = update_opacity(plotconfig[a]["color"], 1)
@@ -197,7 +207,10 @@ def plot_workload(
             },
         }
         line_ = {"width": 7}
+        
         name_ = "<b>" + plotconfig[a]["label"] + "</b>"
+
+        # TODO / here: also constraint the timestamp type, which should be in the csv
         y_ = data[data["list"] == ds + "-" + a]
         y_ = y_[y_.wrk_threads.isin(threads)]["tot_thruput"]
         fig.add_scatter(
@@ -219,58 +232,58 @@ def plot_workload(
         fig.write_html(os.path.join(save_dir, filename))
 
     # Print speedup for paper.
-    if FLAGS.print_speedup:
-        ignore = ["ubundle"]
-        overalgo = "unsafe"
-        overalgos = [
-            k for k in plotconfig.keys() if (k not in ignore and k != overalgo)
-        ]
-        print('Speedup over "' + overalgo + '" for ' + ds + " @ " +
-              str(u_rate) + "% updates\n")
-        threads_printed = False
-        for o in overalgos:
-            o_name = ds + "-" + o
-            if not threads_printed:
-                print("{:<15}|".format("algorithm"), end="")
-                for i in range(len(threads) // 2):
-                    print("{:10}".format(""), end="")
-                print("# threads")
-                print("{:15}|".format("---------------"), end="")
-                for i in range(len(threads)):
-                    print("{:10}".format("----------"), end="")
-                print()
-                print("{:<15}|".format(""), end="")
-                for t in threads:
-                    print("{:>10}".format(t), end="")
-                print()
-                print("{:<15}|".format(""), end="")
-                for t in threads:
-                    print("{:>10}".format("-----"), end="")
-                threads_printed = True
+    # if FLAGS.print_speedup:
+    #     ignore = ["ubundle"]
+    #     overalgo = "unsafe"
+    #     overalgos = [
+    #         k for k in plotconfig.keys() if (k not in ignore and k != overalgo)
+    #     ]
+    #     print('Speedup over "' + overalgo + '" for ' + ds + " @ " +
+    #           str(u_rate) + "% updates\n")
+    #     threads_printed = False
+    #     for o in overalgos:
+    #         o_name = ds + "-" + o
+    #         if not threads_printed:
+    #             print("{:<15}|".format("algorithm"), end="")
+    #             for i in range(len(threads) // 2):
+    #                 print("{:10}".format(""), end="")
+    #             print("# threads")
+    #             print("{:15}|".format("---------------"), end="")
+    #             for i in range(len(threads)):
+    #                 print("{:10}".format("----------"), end="")
+    #             print()
+    #             print("{:<15}|".format(""), end="")
+    #             for t in threads:
+    #                 print("{:>10}".format(t), end="")
+    #             print()
+    #             print("{:<15}|".format(""), end="")
+    #             for t in threads:
+    #                 print("{:>10}".format("-----"), end="")
+    #             threads_printed = True
 
-            if len(threads) == 0:
-                continue
-            print("\n{:15}|".format(""))
-            print("{:<15}{}".format(o, "|"), end="")
-            for t in threads:
-                numerator = data[data["list"] == o_name]
-                numerator = numerator[numerator["wrk_threads"] ==
-                                      t]["tot_thruput"]
-                denominator = data[data["list"] == ds + "-" + overalgo]
-                denominator = denominator[denominator["wrk_threads"] ==
-                                          t]["tot_thruput"]
-                try:
-                    print(
-                        "{:>10.3}".format(numerator.values[0] /
-                                          denominator.values[0]),
-                        end="",
-                    )
-                except:
-                    print(
-                        "{:>10}".format("-"),
-                        end="",
-                    )
-        print("\n\n")
+    #         if len(threads) == 0:
+    #             continue
+    #         print("\n{:15}|".format(""))
+    #         print("{:<15}{}".format(o, "|"), end="")
+    #         for t in threads:
+    #             numerator = data[data["list"] == o_name]
+    #             numerator = numerator[numerator["wrk_threads"] ==
+    #                                   t]["tot_thruput"]
+    #             denominator = data[data["list"] == ds + "-" + overalgo]
+    #             denominator = denominator[denominator["wrk_threads"] ==
+    #                                       t]["tot_thruput"]
+    #             try:
+    #                 print(
+    #                     "{:>10.3}".format(numerator.values[0] /
+    #                                       denominator.values[0]),
+    #                     end="",
+    #                 )
+    #             except:
+    #                 print(
+    #                     "{:>10}".format("-"),
+    #                     end="",
+    #                 )
+    #     print("\n\n")
 
 
 def plot_rq_sizes(
@@ -569,7 +582,7 @@ def main(argv):
         for ds in microbench_configs["datastructures"]:
             for k in microbench_configs["ksizes"]:
                 if "run_workloads" in experiments:
-                    for u in FLAGS.workloads_urates:
+                    for u in FLAGS.workloads_urates: # iterate through workloads
                         plot_workload(
                             FLAGS.microbench_dir,
                             ds,
@@ -595,6 +608,7 @@ def main(argv):
                         FLAGS.legends,
                         FLAGS.save_plots,
                         os.path.join(FLAGS.save_dir, "microbench"),
+                        
                     )
 
     # Plot macrobench results (corresponds to Figure 4)

@@ -2,10 +2,10 @@
 
 # multiple values okay
 threads="1 2 24 48 72 96 120 144 168 192"
-  # SKIPLISTLOCK: benchs="luigi.skiplistlock.rq_vcas.ts.out luigi.skiplistlock.rq_vcas.rdtsc.out luigi.skiplistlock.rq_vcas.rdtscp.out"
-# BST:
-benchs="luigi.bst.rq_vcas.ts.out luigi.bst.rq_vcas.rdtsc.out luigi.bst.rq_vcas.rdtscp.out"
-  # CITRUS: benchs="luigi.citrus.rq_vcas.ts.out luigi.citrus.rq_vcas.rdtsc.out luigi.citrus.rq_vcas.rdtscp.out"
+#SKIPLISTLOCK:
+benchs="luigi.skiplistlock.rq_vcas.ts.out luigi.skiplistlock.rq_vcas.rdtsc.out luigi.skiplistlock.rq_vcas.rdtscp.out"
+  # BST: benchs="luigi.bst.rq_vcas.ts.out luigi.bst.rq_vcas.rdtsc.out luigi.bst.rq_vcas.rdtscp.out"
+  # CITRUS:benchs="luigi.citrus.rq_vcas.ts.out luigi.citrus.rq_vcas.rdtsc.out luigi.citrus.rq_vcas.rdtscp.out"
   # LAZYLIST: benchs="luigi.lazylist.rq_vcas.ts.out luigi.lazylist.rq_vcas.rdtsc.out luigi.lazylist.rq_vcas.rdtscp.out"
 
 iterations="1 2 3 4 5"
@@ -13,9 +13,9 @@ sizes="1000000"
 rqsize="100"
 
 # only one value - defines the workload, rest is contains
-insert="0"
-delete="0"
-range_query="0"
+insert="40"
+delete="40"
+range_query="10"
 
 # shouldn't change
 beg_loads="env LD_PRELOAD=lib/libjemalloc.so"
@@ -27,8 +27,11 @@ bind="0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64,68,72,76,80,84,88,92,96,10
 # where to find the executables
 bin=executables
 
-if [ ! -d "log" ]; then
-	mkdir log
+ds="skiplist"
+logdir="log-vcas-${ds}-${insert}-${delete}-${range_query}"
+
+if [ ! -d ${logdir} ]; then
+	mkdir ${logdir}
 fi
 
 for size in ${sizes}
@@ -39,7 +42,7 @@ do
   do
    for iter in ${iterations}
    do 
-     ${beg_loads} ${bin}/${bench} -i ${insert} -d ${delete} -rq ${range_query} -rqsize ${rqsize} -k ${size} -p -t ${duration} -nrq 0 -nwork ${thread} -bind ${bind} | grep 'total throughput' >> log/${bench}-n${thread}.log
+     ${beg_loads} ${bin}/${bench} -i ${insert} -d ${delete} -rq ${range_query} -rqsize ${rqsize} -k ${size} -p -t ${duration} -nrq 0 -nwork ${thread} -bind ${bind} | grep 'total throughput' >> ${logdir}/${bench}-n${thread}.log
    done
    echo "Done experimenting for $bench with $thread threads" 
   done

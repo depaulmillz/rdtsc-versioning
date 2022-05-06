@@ -13,7 +13,7 @@
 #endif
 
 #if not defined(TS_PROVIDER)
-#define TS_PROVIDER VcasTimestamp
+#define TS_PROVIDER BackoffTimestamp
 #endif
 
 #define CAS(addr, expected_value, new_value) \

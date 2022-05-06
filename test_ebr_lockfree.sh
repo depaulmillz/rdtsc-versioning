@@ -2,22 +2,22 @@
 
 # multiple values okay
 threads="1 2 24 48 72 96 120 144 168 192"
-  # SKIPLISTLOCK: benchs="luigi.skiplistlock.rq_bundle.ts.out luigi.skiplistlock.rq_bundle.rdtsc.out luigi.skiplistlock.rq_bundle.rdtscp.out"
-  # BST: benchs="luigi.bst.rq_bundle.rdtsc.out luigi.bst.rq_bundle.rdtscp.out luigi.bst.rq_bundle.ts.out"
-# CITRUS:
-benchs="luigi.citrus.rq_bundle.ts.out luigi.citrus.rq_bundle.rdtsc.out luigi.citrus.rq_bundle.rdtscp.out"
-  # LAZYLIST: benchs="luigi.lazylist.rq_bundle.rdtsc.out luigi.lazylist.rq_bundle.rdtscp.out luigi.lazylist.rq_bundle.ts.out"
+  # SKIPLISTLOCK: benchs="luigi.skiplistlock.rq_lockfree.ts.out luigi.skiplistlock.rq_lockfree.rdtsc.out luigi.skiplistlock.rq_lockfree.rdtscp.out"
+  # BST:
+  benchs="luigi.bst.rq_lockfree.ts.out luigi.bst.rq_lockfree.rdtsc.out luigi.bst.rq_lockfree.rdtscp.out"
+  # CITRUS: benchs="luigi.citrus.rq_lockfree.ts.out luigi.citrus.rq_lockfree.rdtsc.out luigi.citrus.rq_lockfree.rdtscp.out"
+  # LAZYLIST: benchs="luigi.lazylist.rq_lockfree.ts.out luigi.lazylist.rq_lockfree.rdtsc.out luigi.lazylist.rq_lockfree.rdtscp.out"
 iterations="1 2 3 4 5"
 sizes="1000000"
 rqsize="100"
 
 # only one value - defines the workload
-insert="50"
-delete="50"
-range_query="0"
+insert="5"
+delete="5"
+range_query="10"
 
 # shouldn't change
-beg_loads="env LD_PRELOAD=lib/libjemalloc.so TREE_MALLOC=lib/libjemalloc.so"
+beg_loads="env LD_PRELOAD=lib/libjemalloc.so"
 duration="5000"
 
 # 48 per numa zone
@@ -26,8 +26,8 @@ bind="0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64,68,72,76,80,84,88,92,96,10
 # where to find the executables
 bin=executables
 
-ds="citrus"
-logdir="log-bundling-${ds}-${insert}-${delete}-${range_query}"
+ds="bst"
+logdir="log-ebr-lockfree-${ds}-${insert}-${delete}-${range_query}"
 
 if [ ! -d ${logdir} ]; then
 	mkdir ${logdir}

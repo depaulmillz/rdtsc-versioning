@@ -1,7 +1,7 @@
 // Olivia Grimes
 //
 // Timestamp provider
-// Timestamp interface for "traditional" timestamping (Bundling, Vcas), RDTSC and RDTSCP
+// Timestamp interface for atomic global timestamping (Bundling, Vcas), RDTSC and RDTSCP
 // implementations of various data structures
 
 #pragma once
@@ -11,7 +11,7 @@
 
 typedef long long timestamp_t;
 
-// for the BundlingTimestamp & VcasTimestamp
+// for the BackoffTimestamp
 static thread_local int backoff_amt = 0;
 
 class TimestampProvider {
@@ -48,10 +48,10 @@ class RdtscpTimestamp: public TimestampProvider {
         inline timestamp_t readRdtscp() {
             unsigned long long cycles_low, cycles_high;
             asm volatile (
-                "LFENCE\n\t"
                 "RDTSCP\n\t"
                 "mov %%rdx, %0\n\t"
-                "mov %%rax, %1\n\t": "=r" (cycles_high), "=r" (cycles_low)::
+                "mov %%rax, %1\n\t"
+                "LFENCE\n\t": "=r" (cycles_high), "=r" (cycles_low)::
                 "%rax", "%rcx", "%rdx"
                 );
             return (((uint64_t)cycles_high << 32) | cycles_low);
@@ -67,7 +67,7 @@ class RdtscpTimestamp: public TimestampProvider {
         }
 };
 
-class BasicTimestamp: public TimestampProvider {
+class BackoffTimestamp: public TimestampProvider {
     private:
         volatile timestamp_t curr_timestamp;
 
@@ -94,7 +94,7 @@ class BasicTimestamp: public TimestampProvider {
         }
 
     public:
-        BasicTimestamp() {
+        BackoffTimestamp() {
             curr_timestamp = MIN_TIMESTAMP;
         }
 
@@ -104,5 +104,63 @@ class BasicTimestamp: public TimestampProvider {
 
         inline timestamp_t Advance() {
             return getNextTS();
+        }
+};
+
+class BundlingTimestamp: public TimestampProvider {
+    private:
+        std::atomic<timestamp_t> curr_timestamp_;
+
+        inline void backoff(int amount) {
+            if (amount == 0) return;
+            volatile long long sum = 0;
+            int limit = amount;
+            for (int i = 0; i < limit; i++) sum += i;
+        }
+
+        inline timestamp_t getNextTS() {
+            timestamp_t ts = curr_timestamp_.load(std::memory_order_seq_cst);
+            backoff(backoff_amt);
+            if (ts == curr_timestamp_.load(std::memory_order_seq_cst)) {
+                if (curr_timestamp_.fetch_add(1, std::memory_order_release) == ts)
+                backoff_amt /= 2;
+                else
+                    backoff_amt *= 2;
+            }
+            if (backoff_amt < 1) backoff_amt = 1;
+            if (backoff_amt > 512) backoff_amt = 512;
+            return ts + 1;
+        }
+
+    public:
+        BundlingTimestamp() {
+            curr_timestamp_ = MIN_TIMESTAMP;
+        }
+
+        inline timestamp_t Read() {
+            return curr_timestamp_.load();
+        }
+
+        inline timestamp_t Advance() {
+            return getNextTS();
+        }
+};
+
+// lock-based implementation of ebr timestamp
+class EbrTimestamp: public TimestampProvider {
+    private:
+        volatile long long timestamp;
+
+    public:
+        EbrTimestamp() {
+            timestamp = 1;
+        }
+
+        inline timestamp_t Read() {
+            return timestamp;
+        }
+
+        inline timestamp_t Advance() {
+            return ++timestamp;
         }
 };

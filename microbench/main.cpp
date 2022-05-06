@@ -638,8 +638,9 @@ void trial() {
   //      then check "running.load()" to see if we're done.
   //      if not, loop and sleep in small increments for up to 5s,
   //      and exit(-1) if running doesn't hit 0.
-
+  COUTATOMIC("MILLIS_TO_RUN: " << MILLIS_TO_RUN << endl);  
   if (MILLIS_TO_RUN > 0) {
+    COUTATOMIC("here bc millis > 0..." << endl);
     nanosleep(&tsExpected, NULL);
     SOFTWARE_BARRIER;
     glob.done = true;

@@ -43,10 +43,15 @@ extern Random rngs[MAX_TID_POW2 * PREFETCH_SIZE_WORDS];
 #define WAIT_FOR_DTIME(node) ({ false; })
 #endif
 
+#if not defined(TS_PROVIDER)
+#define TS_PROVIDER RdtscpTimestamp
+#endif
+
 #include <pthread.h>
 #include <hashlist.h>
 #include "rq_debugging.h"
 #include "dcss_plus_impl.h"
+#include "timestamp_provider.h"
 
 template <typename T>
 inline bool contains(T **nullTerminatedArray, T *element)
@@ -125,6 +130,7 @@ private:
 
     DataStructure *ds;
     RecordManager *const recmgr;
+    TS_PROVIDER ts_provider;
 
     int init[MAX_TID_POW2] = {
         0,
@@ -470,7 +476,27 @@ public:
     inline void traversal_start(const int tid)
     {
         threadData[tid].hashlist->clear();
-        threadData[tid].rq_lin_time = __sync_add_and_fetch(&timestamp, 1); // linearize rq here!
+        threadData[tid].rq_lin_time = RQ_start(); // linearization point
+    }
+
+    inline timestamp_t RQ_start() {
+        // need to atomically read the hardware ts and assign it as the global timestamp,
+        // and set the threadData's rq_lin_time as this new value (even if another RQ increments it between
+        // CAS-ing and setting it)
+
+        bool res = false;
+    
+        while (true) {
+            long long curr_ts = timestamp;
+            long long ts = ts_provider.Advance(); // just returns what is read from rdtsc/p
+            
+            if (curr_ts == timestamp) {
+                res = __sync_bool_compare_and_swap(&timestamp, curr_ts, ts);
+                if (res) {
+                    return ts;
+                }
+            }
+        }
     }
 
 private:
