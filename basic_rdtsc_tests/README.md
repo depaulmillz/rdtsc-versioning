@@ -2,16 +2,7 @@
 
 Basic initial testing of accessing RDTSC/P in a loop respectively versus accessing an atomic integer in a loop as threads scale.
 
-## Description
-
-An in-depth paragraph about your project and overview of use.
-
-## Getting Started
-
-### Executing program
-
-* How to run the program
-* Step-by-step bullets
+## Executing program
 
 Command to compile: 
 ```
@@ -31,10 +22,3 @@ Command to run:
 "rdtscp": Accessing RDTSCP in a loop. As RDTSCP has it's own pseudo-serializing property wherein it waits until all preceding instructions have executed before reading the counter, however, it allows for the possibility that subsequent instructions may begin execution before the read operation of TSC is performed. To fix the latter issue, we use an LFENCE instruction immediately after the RDTSCP instruction.
 
 "atomic_no_tf": Incrementing an atomic integer in a loop, without any thread pinning - the OS loadbalances.
-
-## Help
-
-Any advise for common problems or issues.
-```
-command to run if program contains helper info
-```
