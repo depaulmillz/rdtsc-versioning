@@ -4,16 +4,16 @@ import subprocess
 
 # General configuration.
 COLORS = [
-    "rgb(255,255,106)",  # Yellow
-    "rgb(31,120,180)",  # Blue
-    "rgb(178,223,138)",  # 
-    "rgb(51,160,44)",
-    "rgb(251,154,153)",
-    "rgb(207,233,252)",
+    "rgb(147, 109, 176)", # Purple
+    "rgb(23, 190, 207)",  # Blue/Teal
+    "rgb(178,223,138)",  # Green
+    "rgb(235,176,113)", # 3 light orange
+    "rgb(235, 221, 113)", # light yellow
+    "rgb(213, 177, 240)", # 5 light purple
     "rgb(188, 189, 34)",
-    "rgb(23, 190, 207)",
+    "rgb(31,120,180)",
     "rgb(240, 74, 62)",
-    "rgb(23, 190, 207)",
+    "rgb(240, 74, 62)",
 ]
 
 plotconfig = {
@@ -75,6 +75,24 @@ plotconfig = {
         "label": "Bundle-RDTSCP",
         "color": COLORS[1],
         "symbol": 3,
+        "macrobench": "RQ_BUNDLE",
+    },
+    "testing-ts": {
+        "label": "Logical TS",
+        "color": COLORS[3],
+        "symbol": 2,
+        "macrobench": "RQ_BUNDLE",
+    },
+    "testing-rdtsc": {
+        "label": "RDTSC",
+        "color": COLORS[4],
+        "symbol": 3,
+        "macrobench": "RQ_BUNDLE",
+    },
+    "testing-rdtscp": {
+        "label": "RDTSCP",
+        "color": COLORS[5],
+        "symbol": 4,
         "macrobench": "RQ_BUNDLE",
     },
     # "rlu-ts": {

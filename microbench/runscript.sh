@@ -15,7 +15,7 @@ preloads="env LD_PRELOAD=../lib/libjemalloc.so TREE_MALLOC=../lib/libjemalloc.so
 #preloads="LD_PRELOAD=../lib/libjemalloc.so"
 
 echo "Generating 'experiment_list.txt' according to settings in '/config.mk'..."
-#./experiment_list_generate.sh
+./experiment_list_generate.sh
 
 skip_steps_before=0
 skip_steps_after=1000000
@@ -52,8 +52,7 @@ estimated_mins=$(expr $estimated_secs / 60)
 estimated_mins=$(expr $estimated_mins % 60)
 echo "Estimated running time: ${estimated_hours}h${estimated_mins}m" >$fsummary
 
-#cnt1=10000
-cnt1=10531
+cnt1=10000
 cnt2=$(expr $cnt2 + 10000)
 
 printf "${cols}\n" ${headers} >>$fsummary

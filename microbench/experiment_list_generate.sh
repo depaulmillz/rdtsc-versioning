@@ -8,8 +8,8 @@ source ./supported.inc
 ## Overwrite datastructures and rqtechniques from 'supported.inc'
 ## Full experimental configurations.
 #rqtechniques="unsafe vcas rlu bundle bundlerq lockfree"
-rqtechniques="bundle"
-datastructures="skiplistlock"
+rqtechniques="run_workloads"
+datastructures="ds"
 #ksizes="10000 1000000"
 ksizes="1000000"
 timestamp="ts rdtscp"
@@ -22,9 +22,8 @@ run_workloads() {
   echo "Preparing workloads: THROUGHPUT WHILE VARYING WORKLOAD DISTRIBUTION"
   count=0
   rqsize=100
-  # rqrates="0 2 10 50"
-  rqrates="0 10"
-  urates="0 1 5 25 45 50" # 2 * rate = total update %
+  rqrates="0"
+  urates="50" # 2 * rate = total update %
   nrq=0
   prepare_exp "workloads" >>experiment_list.txt
   for rq in $rqrates; do
