@@ -22,3 +22,4 @@ macrobench/compiling*
 log
 lib
 executables
+basic_rdtsc_tests/ts.exe

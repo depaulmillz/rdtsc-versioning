@@ -13,6 +13,9 @@
 #define CUTOFF 96
 #define MAX_THREADS 192
 
+#define NUMA_ZONES 4
+#define NUMA_ZONE_THREADS 48
+
 // g++ -W -Wall -Wextra -pthread -o ts.exe timestamp.cpp
 // ./ts.exe -n 400000000 -m atomic -t 196
 
@@ -70,53 +73,33 @@ void atomic_no_tf(std::vector<std::thread> *threads) {
 }
 
 void atomic(std::vector<std::thread> *threads) {
-
-    for (int i = 0; i < cfg.threads; i+=2){
-        if (i == cfg.threads - 1) {
-            int ops = cfg.num_ops - (i * ops_per_thread);
-            (*threads)[i] = std::thread([=]{
-                increment(ops);
-            });
-
-        } else {
-            (*threads)[i] = std::thread([=]{
-                increment(ops_per_thread);
-            });
-        }
-
-        int cpu_id = (i * 2) % CUTOFF; // 0 2 4 6 8
-
-        cpu_set_t cpuset;
-        CPU_ZERO(&cpuset);
-        CPU_SET(cpu_id, &cpuset);
-        int rc = pthread_setaffinity_np((*threads)[i].native_handle(), sizeof(cpu_set_t), &cpuset);
-        if (rc != 0) {
-            std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
-        }
-
-        int inc_i = i + 1;
-        if (inc_i < cfg.threads) {
-            if (inc_i == cfg.threads - 1) {
-                int ops = cfg.num_ops - (inc_i * ops_per_thread);
-                (*threads)[inc_i] = std::thread([=]{
-                    increment(ops);
-                });
+    for (int j = 0; j < NUMA_ZONES; j++) {
+        for (int i = 0; i < NUMA_ZONE_THREADS; i++) {
+            int thread_num = (j * NUMA_ZONE_THREADS) + i;
+            if (thread_num < cfg.threads) {
+                int cpu_id = (thread_num % NUMA_ZONE_THREADS) * NUMA_ZONES + j;
+                if (thread_num == cfg.threads - 1) {
+                    int ops = cfg.num_ops - (thread_num * ops_per_thread);
+                    (*threads)[thread_num] = std::thread([=]{
+                        increment(ops);
+                    });
+                } else {
+                    (*threads)[thread_num] = std::thread([=]{
+                        increment(ops_per_thread);
+                    });
+                }
+                // pin thread to a core
+                cpu_set_t cpuset;
+                CPU_ZERO(&cpuset);
+                CPU_SET(cpu_id, &cpuset);
+                int rc = pthread_setaffinity_np((*threads)[thread_num].native_handle(), sizeof(cpu_set_t), &cpuset);
+                if (rc != 0) {
+                    std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
+                }
             } else {
-                (*threads)[inc_i] = std::thread([=]{
-                    increment(ops_per_thread);
-                });
+                std::cout << "Goodbye, thread num is " << thread_num << "\n";
+                return;
             }
-        } else {
-            break;
-        }
-        
-        cpu_set_t cpuset2;
-        CPU_ZERO(&cpuset2);
-        int cpu_id2 = (cpu_id + CUTOFF) % MAX_THREADS;
-        CPU_SET(cpu_id2, &cpuset2);
-        rc = pthread_setaffinity_np((*threads)[inc_i].native_handle(), sizeof(cpu_set_t), &cpuset2);
-        if (rc != 0) {
-            std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
         }
     }
 }
