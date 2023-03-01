@@ -627,11 +627,11 @@ void trial() {
       << endl);
   COUTATOMIC(endl);
 
-  SOFTWARE_BARRIER;
+  ;
   glob.startTime = chrono::high_resolution_clock::now();
   __sync_synchronize();
   glob.start = true;
-  SOFTWARE_BARRIER;
+  ;
 
   // pthread_join is replaced with sleeping, and kill threads if they run too
   // long method: sleep for the desired time + a small epsilon,
@@ -642,7 +642,7 @@ void trial() {
   if (MILLIS_TO_RUN > 0) {
     COUTATOMIC("here bc millis > 0..." << endl);
     nanosleep(&tsExpected, NULL);
-    SOFTWARE_BARRIER;
+    ;
     glob.done = true;
     __sync_synchronize();
   }

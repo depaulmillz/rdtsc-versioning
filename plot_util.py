@@ -89,10 +89,22 @@ plotconfig = {
         "symbol": 3,
         "macrobench": "RQ_BUNDLE",
     },
+    "testing-rdtsc_nofence": {
+        "label": "RDTSC (No Fences)",
+        "color": COLORS[4],
+        "symbol": 5,
+        "macrobench": "RQ_BUNDLE",
+    },
     "testing-rdtscp": {
         "label": "RDTSCP",
         "color": COLORS[5],
         "symbol": 4,
+        "macrobench": "RQ_BUNDLE",
+    },
+    "testing-rdtscp_nofence": {
+        "label": "RDTSCP (No Fences)",
+        "color": COLORS[5],
+        "symbol": 6,
         "macrobench": "RQ_BUNDLE",
     },
     # "rlu-ts": {

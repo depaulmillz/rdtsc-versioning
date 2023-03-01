@@ -144,6 +144,7 @@ def plot_workload(
     # Provide column labels for desired x and y axis
     x_axis = "wrk_threads"
     y_axis = "tot_thruput"
+    error_rate = "std_dev"
 
     # Init data store
     data = {}
@@ -152,14 +153,13 @@ def plot_workload(
     ignore = ["ubundle"]
     algos = [k for k in plotconfig.keys() if k not in ignore]
 
-    # TODO: where are they determining what is happening lol (how to involve timestamp correctly in naming a line)
-
     # Read in data for each algorithm
     print("Getting data: ds={}, max_key={}, u_rate={}, rq_rate={}".format(
             ds, max_key, u_rate, rq_rate))
     data = csv.getdata(["max_key", "u_rate", "rq_rate"],
                        [max_key, u_rate, rq_rate]) # gets all data from the rows in first array which match the workload in the second
     data[y_axis] = data[y_axis] / 1000000
+    data[error_rate] = data[error_rate] / 1000000
 
     if data.empty:
         report_empty("ds={}, max_key={}, u_rate={}".format(
@@ -194,6 +194,9 @@ def plot_workload(
 
     fig = go.Figure(layout=layout_)
     
+    max_co_var = 0
+    tot_co_var = 0
+    count = 0
     for a in algos:
         symbol_ = plotconfig[a]["symbol"]
         color_ = update_opacity(plotconfig[a]["color"], 1)
@@ -209,10 +212,23 @@ def plot_workload(
         line_ = {"width": 7}
         
         name_ = "<b>" + plotconfig[a]["label"] + "</b>"
+        
+        y_1 = data[data["list"] == ds + "-" + a]
+        y_ = y_1[y_1.wrk_threads.isin(threads)]["tot_thruput"]
 
-        # TODO / here: also constraint the timestamp type, which should be in the csv
-        y_ = data[data["list"] == ds + "-" + a]
-        y_ = y_[y_.wrk_threads.isin(threads)]["tot_thruput"]
+        # also grab the standard deviation, which I added (see make_csv.sh)
+        error = y_1[y_1.wrk_threads.isin(threads)]["std_dev"]
+
+        error_list = error.tolist()
+        y_list = y_.tolist()
+        for i in range(len(error_list)):
+            temp_co_var = error_list[i] / y_list[i]
+            tot_co_var += temp_co_var
+            count += 1
+            print("\tTemp Co-Var: ", temp_co_var, "\t (", threads[i], ")")
+            if temp_co_var > max_co_var:
+                max_co_var = temp_co_var
+
         fig.add_scatter(
             x=threads,
             y=y_,
@@ -220,7 +236,15 @@ def plot_workload(
             marker=marker_,
             line=line_,
             showlegend=legend,
+            error_y=dict(
+                type='data', # value of error bar - standard deviation
+                array=error,
+                visible=True),
         )
+
+    print("Maximum coefficient variance: ", max_co_var)
+    print("Total coefficient variance: ", tot_co_var)
+    print("Count: ", count)
 
     if not save:
         fig.show()

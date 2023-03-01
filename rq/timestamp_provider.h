@@ -1,4 +1,6 @@
-// Olivia Grimes
+// Author: Olivia Grimes
+//
+// Last Updated: 
 //
 // Timestamp provider
 // Timestamp interface for atomic global timestamping (Bundling, Vcas), RDTSC and RDTSCP
