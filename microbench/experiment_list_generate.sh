@@ -7,9 +7,10 @@ source ./supported.inc
 
 ## Overwrite datastructures and rqtechniques from 'supported.inc'
 ## Full experimental configurations.
-rqtechniques="unsafe vcas rlu bundle bundlerq lockfree"
-datastructures="lazylist skiplistlock citrus"
-ksizes="10000 1000000"
+rqtechniques="bundle vcas rwlock"
+datastructures="skiplistlock lazylist citrus bst"
+ksizes="1000000"
+timestamp="ts rdtscp"
 
 prepare_exp() {
   echo 0 0 0 0 0 0 $1 prepare
@@ -18,9 +19,8 @@ prepare_exp() {
 run_workloads() {
   echo "Preparing workloads: THROUGHPUT WHILE VARYING WORKLOAD DISTRIBUTION"
   count=0
-  rqsize=50
-  # rqrates="0 2 10 50"
-  rqrates="0 10"
+  rqsize=100
+  rqrates="0 10 20"
   urates="0 1 5 25 45 50" # 2 * rate = total update %
   nrq=0
   prepare_exp "workloads" >>experiment_list.txt
@@ -34,19 +34,21 @@ run_workloads() {
       for k in $ksizes; do
         for ds in $datastructures; do
           for alg in $rqtechniques; do
-            nworks="0"
-            if [ "$threadincrement" -ne "1" ]; then nworks="$nworks 1"; fi
-            for ((x = $threadincrement; x < ${maxthreads}; x += $threadincrement)); do nworks="$nworks $x"; done
-            if [ "$((${x} - ${threadincrement}))" -ne "${maxthreads}" ]; then nworks="$nworks $maxthreads"; fi
-            for nwork in $nworks; do
-              if [ ${nwork} -eq "0" ] && [ ${nrq} -eq "0" ]; then continue; fi
-              check_ds_technique $ds $alg
-              if [ "$?" -ne 0 ]; then continue; fi
-              check_ds_size $ds $k
-              if [ "$?" -ne 0 ]; then continue; fi
-              if [ "$((u * 2 + rq))" -gt 100 ]; then continue; fi
-              echo $u $rq $rqsize $k $nrq $nwork $ds $alg >>experiment_list.txt
-              count=$((${count} + 1))
+            for ts in $timestamp; do
+              nworks="0"
+              if [ "$threadincrement" -ne "1" ]; then nworks="$nworks 1"; fi
+              for ((x = $threadincrement; x < ${maxthreads}; x += $threadincrement)); do nworks="$nworks $x"; done
+              if [ "$((${x} - ${threadincrement}))" -ne "${maxthreads}" ]; then nworks="$nworks $maxthreads"; fi
+              for nwork in $nworks; do
+                if [ ${nwork} -eq "0" ] && [ ${nrq} -eq "0" ]; then continue; fi
+                check_ds_technique $ds $alg
+                if [ "$?" -ne 0 ]; then continue; fi
+                check_ds_size $ds $k
+                if [ "$?" -ne 0 ]; then continue; fi
+                if [ "$((u * 2 + rq))" -gt 100 ]; then continue; fi
+                echo $u $rq $rqsize $k $nrq $nwork $ds $alg $ts >>experiment_list.txt
+                count=$((${count} + 1))
+              done
             done
           done
         done
@@ -89,6 +91,6 @@ run_rq_sizes() {
 
 #< Indicates the plotting script should detect this line as an experiment to plot
 run_workloads #<
-run_rq_sizes  #<
+#run_rq_sizes  #<
 
 echo "Total experiment lines generated:" $(cat experiment_list.txt | wc -l)

@@ -243,7 +243,7 @@ V lazylist<K,V,RecManager>::erase(const int tid, const K& key) {
 template <typename K, typename V, class RecManager>
 int lazylist<K,V,RecManager>::rangeQuery(const int tid, const K& lo, const K& hi, K * const resultKeys, V * const resultValues) {
     recordmgr->leaveQuiescentState(tid, true);
-    rqProvider->traversal_start(tid);
+    rqProvider->traversal_start(tid); // increment ts
     int cnt = 0;
     nodeptr curr = rqProvider->read_addr(tid, &head->next);
     while (curr->key < lo) {

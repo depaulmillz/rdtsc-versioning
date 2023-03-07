@@ -39,7 +39,8 @@
 // define BEFORE including rq_provider.h
 #define MAX_NODES_INSERTED_OR_DELETED_ATOMICALLY 4
 #endif
-#include "rq_bundle.h"
+#include "rq_provider.h"
+
 using namespace std;
 
 #define LOGICAL_DELETION_USAGE false

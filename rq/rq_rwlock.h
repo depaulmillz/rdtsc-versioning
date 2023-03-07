@@ -17,11 +17,17 @@
 #ifndef RQ_RWLOCK_H
 #define RQ_RWLOCK_H
 
+#if not defined(TS_PROVIDER)
+#define TS_PROVIDER EbrTimestamp
+#endif
+
 #include "rq_debugging.h"
+#include "timestamp_provider.h"
 #include <hashlist.h>
 #include <rwlock.h>
 #include <pthread.h>
 #include <cassert>
+
 
 // the following define enables an optimization that i'm not sure is correct.
 //#define COLLECT_ANNOUNCEMENTS_FAST
@@ -62,7 +68,6 @@ private:
 
     const int NUM_PROCESSES;
     volatile char padding0[PREFETCH_SIZE_BYTES];
-    volatile long long timestamp = 1;
     volatile char padding1[PREFETCH_SIZE_BYTES];
     RWLock rwlock;
     volatile char padding2[PREFETCH_SIZE_BYTES];
@@ -70,6 +75,7 @@ private:
 
     DataStructure *ds;
     RecordManager *const recmgr;
+    TS_PROVIDER ts_provider;
 
     int init[MAX_TID_POW2] = {
         0,
@@ -94,7 +100,7 @@ public:
 
     long long debug_getTimestamp()
     {
-        return timestamp;
+        return ts_provider.Read();
     }
 
     // invoke before a given thread can perform any rq_functions
@@ -236,6 +242,7 @@ private:
 public:
     // replace the linearization point of an update that inserts or deletes nodes
     // with an invocation of this function if the linearization point is a WRITE
+    // called when inserting/deleting a new node
     template <typename T>
     inline T linearize_update_at_write(
         const int tid,
@@ -252,7 +259,7 @@ public:
         }
 
         rwlock.readLock();
-        long long ts = timestamp;
+        long long ts = ts_provider.Read();
         *lin_addr = lin_newval; // original linearization point
         rwlock.readUnlock();
 
@@ -290,7 +297,7 @@ public:
         }
 
         rwlock.readLock();
-        long long ts = timestamp;
+        long long ts = ts_provider.Read();
         T res = __sync_val_compare_and_swap(lin_addr, lin_oldval, lin_newval);
         rwlock.readUnlock();
 
@@ -321,11 +328,14 @@ public:
     }
 
     // invoke at the start of each traversal
+    // granularity impacts the effectiveness of HW timestamps
+    // see how often the timestamp is incremented in bundling vs vcas vs ebr --> see how the granularity affects it
+    // locks are not meant for synchronization of the timestamp operation itself
     inline void traversal_start(const int tid)
     {
         threadData[tid].hashlist->clear();
         rwlock.writeLock();
-        threadData[tid].rq_lin_time = ++timestamp; // linearization point of range query (at the write to timestamp)
+        threadData[tid].rq_lin_time = ts_provider.Advance(); // linearization point of range query (at the write to timestamp)
         rwlock.writeUnlock();
 
 #ifdef DEBUG_RQ_PROVIDER_METRICS
@@ -410,7 +420,7 @@ private:
             }
             if (dtime == TIMESTAMP_NOT_SET)
             {
-                // above loop exited because the process removed its announcement to this node!
+                // above loop exited because the process removed its announcement to this node! TODO: ??
                 // if the process deleted the node, then it removed the
                 // announcement AFTER setting dtime.
                 // so we reread dtime one more time, to figure out whether
@@ -548,7 +558,7 @@ public:
 #endif
 
         SOFTWARE_BARRIER;
-        long long end_timestamp = timestamp;
+        long long end_timestamp = ts_provider.Read();
         SOFTWARE_BARRIER;
 
         int numVisitedInAnnouncements = 0;

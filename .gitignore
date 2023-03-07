@@ -19,3 +19,11 @@ macrobench/data*
 *.csv
 __pycache__*
 macrobench/compiling*
+log
+lib
+executables
+basic_rdtsc_tests/ts.exe
+*.html
+microbench/test_file.sh
+microbench/test_py.py
+

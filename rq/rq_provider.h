@@ -9,11 +9,13 @@
 #define RQ_PROVIDER_H
 
 #ifndef MAX_NODES_INSERTED_OR_DELETED_ATOMICALLY
-    #define MAX_NODES_INSERTED_OR_DELETED_ATOMICALLY (32)
+#define MAX_NODES_INSERTED_OR_DELETED_ATOMICALLY (32)
 #endif
 
 #if defined RQ_LOCKFREE
 #include "rq_lockfree.h"
+#elif defined RQ_LOCKFREE_HW
+#include "rq_lockfree_hw.h"
 #elif defined RQ_RWLOCK
 #include "rq_rwlock.h"
 #elif defined RQ_HTM_RWLOCK

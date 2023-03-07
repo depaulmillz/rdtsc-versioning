@@ -1,7 +1,7 @@
 #! /bin/bash
 
 if [[ $# -ne 3 ]]; then
-  echo "Incorrect number of arguments (expected=3, actual=$#)."
+  echo "Incorrect number of arguments (expected=4, actual=$#)."
   echo "Usage: $0 <datadir> <num_trials> <listname>."
   exit
 fi
@@ -11,10 +11,13 @@ ntrials=$2
 listname=$3
 # Each algorithm should be isolated in its own directory.
 algos=$(ls ${datadir})
-# echo $algos
+echo "ALGOS"
+echo $algos
 
 cd ${datadir}
 outfile=${listname}.csv
+echo "OUTFILE"
+echo ${outfile}
 
 currfile=""
 rqthrupt=0
@@ -26,6 +29,7 @@ rqlat=0
 rqthrupt=0
 uthrupt=0
 totthrupt=0
+track_thrupt=()
 avgrqlen=0
 avgannounce=0
 avgbag=0
@@ -37,13 +41,11 @@ nobundlestats=0
 restarts=0
 avgretries=0
 avgtraversals=0
-echo "list,max_key,u_rate,rq_rate,wrk_threads,rq_threads,rq_size,u_latency,c_latency,rq_latency,tot_thruput,u_thruput,c_thruput,rq_thruput,rq_len,avg_in_announce,avg_in_bags,reachable_nodes,avg_bundle_size,tot_restarts,avg_retries,avg_traversals" >${outfile}
+echo "list,max_key,u_rate,rq_rate,wrk_threads,rq_threads,rq_size,ts,u_latency,c_latency,rq_latency,tot_thruput,u_thruput,c_thruput,rq_thruput,rq_len,avg_in_announce,avg_in_bags,reachable_nodes,avg_bundle_size,tot_restarts,avg_retries,avg_traversals,std_dev" >${outfile}
 for algo in ${algos}; do
   files=$(ls ${algo} | grep ${listname})
-  # echo $files
   for f in ${files}; do
     filename=${algo}/${f}
-    # echo $filename
     # Only parse lines for given listname.
     if [[ "${listname}" != "" ]] && [[ "$(echo ${filename} | grep ${listname})" == "" ]]; then
       exit
@@ -53,7 +55,12 @@ for algo in ${algos}; do
     fi
 
     # Assumes trials are consecutive.
-    rootname=$(echo ${filename} | sed -E 's/step[0-9]+[.]//' | sed -e 's/[.]trial.*//')
+    rootname=$(echo ${filename} | sed -E 's/step[0-9]+[.]//' | sed -e 's/[.]trial.*//') # filename without "step37821" and "trialx.out" - EX: luigi.skiplistlock.bundle.ts.k1000000.u50.rq0.rqsize50.nrq0.nwork1
+    ts=$(echo $rootname | awk -F'.' '{print $4}') # extract the timestamp
+    if [[ "${ts}" == "rdtsc" ]]; then
+      continue
+    fi 
+
     if [[ ! "${rootname}" == "${currfile}" ]]; then
       trialcount=0
       samplecount=0
@@ -62,7 +69,8 @@ for algo in ${algos}; do
       config=$(cat ${filename} | grep -B 10000 'BEGIN RUNNING')
 
       # Get name of list.
-      list=$(echo ${filename} | sed -e "s/.*[.]${listname}[.]/${listname}-/" | sed -e 's/[.].*//')
+      list=$(echo ${filename} | sed -e "s/.*[.]${listname}[.]/${listname}-/" | sed -e 's/[.].*//') # ex: skiplistlock-bundle
+      list+="-${ts}"
       rqstrategy=$(echo "${list}" | sed -e "s/.*-//")
 
       # Get maximum key.
@@ -93,6 +101,8 @@ for algo in ${algos}; do
     rqthrupt=$(($(echo "${filecontents}" | grep 'rq throughput' | sed -e 's/.*: //') + ${rqthrupt}))
     uthrupt=$(($(echo "${filecontents}" | grep 'update throughput' | sed -e 's/.*: //') + ${uthrupt}))
     totthrupt=$(($(echo "${filecontents}" | grep 'total throughput' | sed -e 's/.*: //') + ${totthrupt}))
+    tot_thpt_now=$(echo "${filecontents}" | grep 'total throughput' | sed -e 's/.*: //')
+    track_thrupt+=(${tot_thpt_now})
 
     # Average range query length.
     avgrqlen=$(($(echo "${filecontents}" | grep 'average length_rqs' | sed -e 's/.*=//') + ${avgrqlen}))
@@ -125,7 +135,7 @@ for algo in ${algos}; do
       elif [[ ${samplecount} == 0 ]]; then
         echo "Error: No samples collected: ${rootname}"
       else 
-        printf "%s,%d,%.2f,%.2f,%d,%d,%d" ${list} ${maxkey} ${urate} ${rqrate} ${nwrkthrds} ${rqthrds} ${rqsize} >>${outfile}
+        printf "%s,%d,%.2f,%.2f,%d,%d,%d,%s" ${list} ${maxkey} ${urate} ${rqrate} ${nwrkthrds} ${rqthrds} ${rqsize} ${ts} >> ${outfile}
         printf ",%d" $((${ulat} / ${samplecount})) >>${outfile}
         printf ",%d" $((${clat} / ${samplecount})) >>${outfile}
         printf ",%d" $((${rqlat} / ${samplecount})) >>${outfile}
@@ -141,7 +151,23 @@ for algo in ${algos}; do
         printf ",%d" $((${restarts} / ${samplecount})) >>${outfile}
         printf ",%d" $((${avgretries} / ${samplecount})) >>${outfile}
         printf ",%d" $((${avgtraversals} / ${samplecount})) >>${outfile}
+
+        # calculate the standard deviation for the similar group of runs
+        sum=0
+        avg=$(bc -l <<< $totthrupt/$samplecount)
+        for value in "${track_thrupt[@]}"
+        do
+          temp1=$(bc -l <<< $value-$avg)
+          temp2=$(bc -l <<< $temp1*$temp1)
+          sum=$(bc -l <<< $temp2+$sum)
+        done
+        variance=$(bc -l <<< $sum/$samplecount)
+        std_dev=$(echo "$variance" | awk '{print sqrt($1)}')
+        std_dev=$(echo ${std_dev} | awk -F"E" 'BEGIN{OFMT="%.2f"} {print $1 * (10 ^ $2)}')
+
+        printf ",%.2f" $(echo "scale=4; ${std_dev}" | bc) >>${outfile}
         printf "\n" >>${outfile}
+
       fi
 
       ulat=0
@@ -150,6 +176,7 @@ for algo in ${algos}; do
       rqthrupt=0
       uthrupt=0
       totthrupt=0
+      track_thrupt=()
       avgrqlen=0
       avgannounce=0
       avgbag=0

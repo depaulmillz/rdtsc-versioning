@@ -4,61 +4,128 @@ import subprocess
 
 # General configuration.
 COLORS = [
-    "rgb(255,255,106)",  # Yellow
-    "rgb(31,120,180)",  # Blue
-    "rgb(178,223,138)",  # 
-    "rgb(51,160,44)",
-    "rgb(251,154,153)",
-    "rgb(207,233,252)",
+    "rgb(147, 109, 176)", # Purple
+    "rgb(23, 190, 207)",  # Blue/Teal
+    "rgb(178,223,138)",  # Green
+    "rgb(235,176,113)", # 3 light orange
+    "rgb(235, 221, 113)", # light yellow
+    "rgb(213, 177, 240)", # 5 light purple
     "rgb(188, 189, 34)",
-    "rgb(23, 190, 207)",
+    "rgb(31,120,180)",
     "rgb(240, 74, 62)",
-    "rgb(23, 190, 207)",
+    "rgb(240, 74, 62)",
 ]
 
 plotconfig = {
-    # "rwlock": {
-    #     "label": "EBR-RQ",
-    #     "color": COLORS[7],
-    #     "symbol": 1,
-    #     "macrobench": "RQ_RWLOCK",
-    # },
-    "lockfree": {
+    "rwlock-ts": {
         "label": "EBR-RQ",
-        "color": COLORS[1],
-        "symbol": 0,
-        "macrobench": "RQ_LOCKFREE",
-    },
-    "vcas": {
-        "label": "vCAS",
         "color": COLORS[2],
-        "symbol": 6,
+        "symbol": 0,
+        "macrobench": "RQ_RWLOCK",
+    },
+    "rwlock-rdtsc": {
+        "label": "EBR-RQ-RDTSC",
+        "color": COLORS[2],
+        "symbol": 1,
+        "macrobench": "RQ_RWLOCK",
+    },
+    "rwlock-rdtscp": {
+        "label": "EBR-RQ-RDTSCP",
+        "color": COLORS[2],
+        "symbol": 3,
+        "macrobench": "RQ_RWLOCK",
+    },
+    # "lockfree-ts": {
+    #     "label": "EBR-RQ",
+    #     "color": COLORS[1],
+    #     "symbol": 0,
+    #     "macrobench": "RQ_LOCKFREE",
+    # },
+    "vcas-ts": {
+        "label": "vCAS",
+        "color": COLORS[0],
+        "symbol": 0,
         "macrobench": "RQ_VCAS"
     },
-    "rlu": {
-        "label": "RLU",
-        "color": COLORS[4],
-        "symbol": 3,
-        "macrobench": "RQ_RLU"
-    },
-    "unsafe": {
-        "label": "Unsafe",
-        "color": COLORS[5],
-        "symbol": 4,
-        "macrobench": "RQ_UNSAFE",
-    },
-    "tsbundle": {
-        "label": "Bundle-RQ",
-        "color": COLORS[3],
-        "symbol": 1,
-        "macrobench": "",
-    },
-    "bundle": {
-        "label": "Bundle",
+    "vcas-rdtsc": {
+        "label": "vCAS-RDTSC",
         "color": COLORS[0],
+        "symbol": 1,
+        "macrobench": "RQ_VCAS"
+    },
+    "vcas-rdtscp": {
+        "label": "vCAS-RDTSCP",
+        "color": COLORS[0],
+        "symbol": 3,
+        "macrobench": "RQ_VCAS"
+    },
+    "bundle-ts": {
+        "label": "Bundle",
+        "color": COLORS[1],
+        "symbol": 0,
+        "macrobench": "RQ_BUNDLE",
+    },
+    "bundle-rdtsc": {
+        "label": "Bundle-RDTSC",
+        "color": COLORS[1],
+        "symbol": 1,
+        "macrobench": "RQ_BUNDLE",
+    },
+    "bundle-rdtscp": {
+        "label": "Bundle-RDTSCP",
+        "color": COLORS[1],
+        "symbol": 3,
+        "macrobench": "RQ_BUNDLE",
+    },
+    "testing-ts": {
+        "label": "Logical TS",
+        "color": COLORS[3],
         "symbol": 2,
         "macrobench": "RQ_BUNDLE",
     },
+    "testing-rdtsc": {
+        "label": "RDTSC",
+        "color": COLORS[4],
+        "symbol": 3,
+        "macrobench": "RQ_BUNDLE",
+    },
+    "testing-rdtsc_nofence": {
+        "label": "RDTSC (No Fences)",
+        "color": COLORS[4],
+        "symbol": 5,
+        "macrobench": "RQ_BUNDLE",
+    },
+    "testing-rdtscp": {
+        "label": "RDTSCP",
+        "color": COLORS[5],
+        "symbol": 4,
+        "macrobench": "RQ_BUNDLE",
+    },
+    "testing-rdtscp_nofence": {
+        "label": "RDTSCP (No Fences)",
+        "color": COLORS[5],
+        "symbol": 6,
+        "macrobench": "RQ_BUNDLE",
+    },
+    # "rlu-ts": {
+    #     "label": "RLU",
+    #     "color": COLORS[4],
+    #     "symbol": 3,
+    #     "macrobench": "RQ_RLU"
+    # },
+    # "unsafe-ts": {
+    #     "label": "Unsafe",
+    #     "color": COLORS[5],
+    #     "symbol": 4,
+    #     "macrobench": "RQ_UNSAFE",
+    # },
+    # "tsbundle-ts": {
+    #     "label": "Bundle-RQ",
+    #     "color": COLORS[3],
+    #     "symbol": 1,
+    #     "macrobench": "",
+    # },
+    
 }
 
 
@@ -286,6 +353,7 @@ class CSVFile:
                                   sep=",",
                                   engine="c",
                                   index_col=False)
+        assert(len(self.df) != 0)
 
     def __str__(self):
         return str(self.df.columns)
@@ -295,11 +363,13 @@ class CSVFile:
         for o, w in zip(filter_col, filter_with):
             # Filter the data for the rows matching the column.
             data = data[data[o] == w]
+        assert(len(data) != 0)
         return data
 
     # Tries to create a csv file for the given data structure (ds) and number of trials (n).
     @staticmethod
     def get_or_gen_csv(dirpath, ds, n):
+        #print("dirpath: " + dirpath)
         filepath = os.path.join(dirpath, ds + ".csv")
         assert os.path.exists(os.path.join("./microbench", "make_csv.sh"))
         if not os.path.exists(filepath):

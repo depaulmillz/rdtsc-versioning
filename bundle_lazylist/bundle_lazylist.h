@@ -9,7 +9,7 @@
 #define MAX_NODES_INSERTED_OR_DELETED_ATOMICALLY 4
 #endif
 #include "bundle_lazylist_impl.h"
-#include "rq_bundle.h"
+#include "rq_provider.h"
 
 template <typename K, typename V>
 class node_t;

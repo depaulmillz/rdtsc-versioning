@@ -118,9 +118,9 @@ int bundle_bst_ns::bundle_bst<K, V, Compare, RecManager>::rangeQuery(
     // Phase 2. Enter range
     if (is_left_child) {
       // curr = prev->left_bundle->getPtrByTimestamp(ts);
-      ok = prev->left_bundle.getPtrByTimestamp(ts, &curr);
+      ok = prev->left_bundle.getPtrByTimestamp(tid, ts, &curr);
     } else {  // curr = prev->right_bundle->getPtrByTimestamp(ts);
-      ok = prev->right_bundle.getPtrByTimestamp(ts, &curr);
+      ok = prev->right_bundle.getPtrByTimestamp(tid, ts, &curr);
     }
 
     if (!ok) {
@@ -142,12 +142,12 @@ int bundle_bst_ns::bundle_bst<K, V, Compare, RecManager>::rangeQuery(
         Node<K, V> *node = stack.pop();
         assert(node);
 
-        ok = node->left_bundle.getPtrByTimestamp(ts, &left);
+        ok = node->left_bundle.getPtrByTimestamp(tid, ts, &left);
         assert(ok);
         // if internal node, explore its children
         if (left != nullptr) {
           if (node->key != this->NO_KEY && !cmp(hi, node->key)) {
-            ok = node->right_bundle.getPtrByTimestamp(ts, &right);
+            ok = node->right_bundle.getPtrByTimestamp(tid, ts, &right);
             assert(ok);
             assert(right);
             stack.push(right);

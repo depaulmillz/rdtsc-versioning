@@ -11,7 +11,7 @@
 #endif
 #include "plaf.h"
 #include "random.h"
-#include "rq_bundle.h"
+#include "rq_provider.h"
 
 using namespace std;
 

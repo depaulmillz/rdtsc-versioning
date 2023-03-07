@@ -41,12 +41,9 @@ class node_t {
       //              // fields that are modified at linearization points of
       //              // operations to occupy a machine word)
       // volatile long long
-      //     fullyLinked;  // stored as long long simply so it is large enough
-      //     to
-      //                   // be used with the lock-free RQProvider (which
-      //                   requires
-      //                   // all fields that are modified at linearization
-      //                   points
+      //     fullyLinked;  // stored as long long simply so it is large enough to
+      //                   // be used with the lock-free RQProvider (which requires
+      //                   // all fields that are modified at linearization points
       //                   // of operations to occupy a machine word)
       // node_t<K, V>* volatile p_next[SKIPLIST_MAX_LEVEL];
       vcas_obj_t<long long>* volatile marked;

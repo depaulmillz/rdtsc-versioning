@@ -389,6 +389,7 @@ V skiplist<K, V, RecManager>::erase(const int tid, const K& key) {
   while (1) {
     recmgr->leaveQuiescentState(tid);
 
+    // find the key and which level it is on (-1 if not exists)
     lFound = find_impl(tid, key, p_preds, p_succs, NULL);
     if (lFound == -1) {
       recmgr->enterQuiescentState(tid);
