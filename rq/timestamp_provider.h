@@ -69,6 +69,7 @@ class RdtscpTimestamp: public TimestampProvider {
         }
 };
 
+// used for vCAS
 class BackoffTimestamp: public TimestampProvider {
     private:
         volatile timestamp_t curr_timestamp;
@@ -109,6 +110,7 @@ class BackoffTimestamp: public TimestampProvider {
         }
 };
 
+// used for bundling
 class BundlingTimestamp: public TimestampProvider {
     private:
         std::atomic<timestamp_t> curr_timestamp_;

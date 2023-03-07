@@ -16,12 +16,12 @@ The following defines must be modified in accordance with the machine used to ru
 
 + `NUMA_ZONES` is the number of NUMA zones in the machine
 
-+ `NUMA_ZONE_THREADS` is the number of cores per NUMA zone
++ `NUMA_ZONE_THREADS` is the number of hyperthreads per NUMA zone
 
 
 ## Executing program
 
-Command to compile: 
+Command to compile (from `basic_rdtsc_tests/`): 
 ```
 g++ -W -Wall -Wextra -pthread -o ts.exe timestamp.cpp
 ```
@@ -47,4 +47,4 @@ Command to run:
 
 `rdtsc_nofence` : Accessing RDTSC in a loop without the "CPUID" serializing instruction, i.e., in a potentially non-serializable manner.
 
-`rdtscp` : Accessing RDTSCP in a loop without the LFENCE instruction, i.e., in a potentially non-serializable manner.
+`rdtscp_nofence` : Accessing RDTSCP in a loop without the LFENCE instruction, i.e., in a potentially non-serializable manner.

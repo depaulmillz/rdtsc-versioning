@@ -1,10 +1,14 @@
 # 1. Opportunities and Limitations of Hardware Timestamps in Concurrent Data Structures
 
-In this paper we analyze techniques meant to augment concurrent data stcutures to include the linearizable range query operation. Each of the techniques analyzed rely on an atomic timestamp to provide MVCC (multi-version concurrency control). Past work has leveraged TSC, the CPUs timestamp counter, to replace the bottleneck-producing atomic timestamp for multi-versioned systems. In this paper, we analyze the opportunities and limitations of using a hardware timestamps in concurrent sata structures.
+In this paper we analyze techniques meant to augment concurrent data stcutures to include the linearizable range query operation. Each of the techniques analyzed rely on an atomic timestamp to provide MVCC (multi-version concurrency control). Past work has leveraged TSC, the CPUs timestamp counter, to replace the bottleneck-producing atomic timestamp for multi-versioned systems. In this paper, we analyze the opportunities and limitations of using a hardware timestamps in concurrent data structures.
 
 # 2. Implementation notes
 
-This work uses the Bundled References codebase (https://github.com/sss-lehigh/bundledrefs) provided by Jacob Nelson as a starting point, and adds to the range query provider in order to support reading from TSC instead of using an atomic timestamp. The Bundled References codebase stems from work developed by Arbel-Raviv and Brown (https://bitbucket.org/trbot86/implementations/src/master/cpp), which includes EBR-RQ and vCAS. vCAS, EBR-RQ, and Bundled References are all techniques meant to provide linearizable range queries in linked data structures. They each rely on an atomic timestamp to provide concurrency control. The hardware timestamp API provided by this work can be found here 'rq/timestamp_provider.h.'. The data structure implementations with bundling are found in 'bundled_\*' directories, those that use vCAS are found in 'vcas_\*' directories, and any other listed data structures (e.g., bst/) are implemented using EBR-RQ. The scripts to produce the plots found in our paper are included under the 'microbench' directory.
+This work builds on a benchmark framework provided by Arbel-Raviv and Brown (https://bitbucket.org/trbot86/implementations/src/master/cpp/range_queries/) to augment concurrent data structures to include lineariable range queries. The three range query techniques studied in this paper include Bundled Refs (or simply "Bundling"), vCAS, and EBR-RQ, each of which stem from Arbel-Raviv and Brown's framework. Each of the RQ techniques rely on an atomic timestamp to provide concurrency control.
+
+This work uses the Bundled References codebase (https://github.com/sss-lehigh/bundledrefs) provided by Jacob Nelson as a starting point (as it is the most recently published work and contains all three RQ implementations), and adds to the range query provider in order to support reading from TSC instead of using a logical timestamp. 
+
+The hardware timestamp API provided by this work can be found in 'rq/timestamp_provider.h.'. The data structure implementations with bundling are found in 'bundled_\*' directories, those that use vCAS are found in 'vcas_\*' directories, and any other listed data structures (e.g., bst/) are implemented using EBR-RQ. The scripts to produce the plots found in our paper are included under the 'microbench/' directory.
 
 # 3. Getting Started Guide
 
@@ -12,7 +16,7 @@ This work uses the Bundled References codebase (https://github.com/sss-lehigh/bu
 
 **Implementation**
 
-`rq/timestamp_provider.h` provides the hardware timestamping API allowing access to a timestamp that either reads from TSC using two different approaches: one which uses the RDTSC instruction, and one which uses the RDTSCP instruction, or reads and writes (increments) a logical, atomic timestamp variable.
+`rq/timestamp_provider.h` provides the hardware timestamping API allowing access to a timestamp that either (1) reads TSC using one of two methods: one which uses the RDTSC instruction, and one which uses the RDTSCP instruction, or (2) reads and writes (increments) a logical, atomic timestamp variable.
 
 `basic_rdtsc_tests/` is a directory which contains the code used in our initial testing (Figure 1 in the paper). Refer to the README located in that directory for documentation.
 
@@ -49,7 +53,6 @@ The experiments from the paper were executed on a 4-socket machine with Intel Xe
 **C++ Libraries:**
 + libnuma (e.g., `sudo apt install libnuma-dev`)
 + libjemalloc
-+ libpapi
 
 **Python libraries:**
 + python (v3.10)
@@ -59,7 +62,9 @@ The experiments from the paper were executed on a 4-socket machine with Intel Xe
 + pandas (v1.3.4)
 + absl-py (v0.13.0)
 
-Please refer to the Bundled References documentation for instructions on how to install the python libraries as well as libjemalloc and libpapi (README_bundling.md).
+Please refer to the Bundled References documentation for instructions on how to install the python libraries (`README_bundling.md`).
+
+To install jemalloc, download the following tar file and follow the instructions contained inside: https://github.com/jemalloc/jemalloc/releases/download/5.2.1/jemalloc-5.2.1.tar.bz2
 
 
 ## c. Building the Project
@@ -71,7 +76,7 @@ cd microbench
 make -j lazylist skiplistlock citrus bst
 ```
 
-The arguments to the `make` command build the EBR-based approach from Arbel-Raviv and Brown, the vCAS approach of Wei et al., the Bundling approach of Nelson et al., and an unsafe version of each that has not consistency guarantees for range queries. For each afformentioned approach, The produced executables are named according to the following convention:
+The arguments to the `make` command build the EBR-based approach from Arbel-Raviv and Brown, the vCAS approach of Wei et al., the Bundling approach of Nelson et al., and an unsafe version of each that has no consistency guarantees for range queries. For each afformentioned approach, The produced executables are named according to the following convention:
 
 `<hostname>.<data structure>.<rq technique>.<timestamp type>.out`
 
@@ -89,11 +94,7 @@ env LD_PRELOAD=../lib/libjemalloc.so TREE_MALLOC=../lib/libjemalloc.so \
 
 For more information on the input parameters to the microbenchmark itself see README.txt.old, which is for the original benchmark implementation. We did not change any arguments.
 
-**Configuring `plot.py` (Advanced)**
-
-In general, there should be no need to perform any configuration for `plot.py` itself. We have arranged for it to pull information from other scripts. However, there are numerous flags that can be set if the user wants more control over the output (run `python plot.py --help` for details).
-
-## a. Microbenchmark
+# Microbenchmark
 
 Our results demonstrate that techniques reliant on a timestamp to provide multi-versioning concurrency control benefit in performance when the method behind the timestamp is accessing RDTSC as opposed to reading and writing an atomic integer, as previously done.
 
