@@ -20,7 +20,7 @@ run_workloads() {
   echo "Preparing workloads: THROUGHPUT WHILE VARYING WORKLOAD DISTRIBUTION"
   count=0
   rqsize=100
-  rqrates="0 10"
+  rqrates="0 10 20"
   urates="0 1 5 25 45 50" # 2 * rate = total update %
   nrq=0
   prepare_exp "workloads" >>experiment_list.txt

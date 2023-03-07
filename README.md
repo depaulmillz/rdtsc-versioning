@@ -1,8 +1,8 @@
-# 1. Opportunities and Limitations of Hardware Timestamps in Concurrent Data Structures
+# Opportunities and Limitations of Hardware Timestamps in Concurrent Data Structures
 
 In this paper we analyze techniques meant to augment concurrent data stcutures to include the linearizable range query operation. Each of the techniques analyzed rely on an atomic timestamp to provide MVCC (multi-version concurrency control). Past work has leveraged TSC, the CPUs timestamp counter, to replace the bottleneck-producing atomic timestamp for multi-versioned systems. In this paper, we analyze the opportunities and limitations of using a hardware timestamps in concurrent data structures.
 
-# 2. Implementation notes
+# Implementation notes
 
 This work builds on a benchmark framework provided by Arbel-Raviv and Brown (https://bitbucket.org/trbot86/implementations/src/master/cpp/range_queries/) to augment concurrent data structures to include lineariable range queries. The three range query techniques studied in this paper include Bundled Refs (or simply "Bundling"), vCAS, and EBR-RQ, each of which stem from Arbel-Raviv and Brown's framework. Each of the RQ techniques rely on an atomic timestamp to provide concurrency control.
 
@@ -10,7 +10,7 @@ This work uses the Bundled References codebase (https://github.com/sss-lehigh/bu
 
 The hardware timestamp API provided by this work can be found in 'rq/timestamp_provider.h.'. The data structure implementations with bundling are found in 'bundled_\*' directories, those that use vCAS are found in 'vcas_\*' directories, and any other listed data structures (e.g., bst/) are implemented using EBR-RQ. The scripts to produce the plots found in our paper are included under the 'microbench/' directory.
 
-# 3. Getting Started Guide
+# Getting Started Guide
 
 ## a. Important files and directories
 
@@ -108,9 +108,9 @@ python plot.py --save_plots --microbench
 
 As previously noted, configuration options can be modified in the following files:
 + `config.mk` stores the information of the system on which the tests are being run
-+ `experiment_list_generate.sh` determines the range query techniques (line 10), data structures (line 11), and timestamp methods which will be tested (line 13), as well as the data structure key range (line 12). There are two experiments in `experiment_list_generate.sh`, and for the purpose of this paper we only use the run workloads method. You can additionally modify the range query rates (line 23) and update rates (line 24) tested in the run workloads method.
++ `microbench/experiment_list_generate.sh` determines the range query techniques (line 10 ; note that `rwlock` is the lock-based version of EBR-RQ), data structures (line 11), and timestamp methods which will be tested (line 13), as well as the data structure key range(s) (line 12). There are two experiments in `experiment_list_generate.sh`, and for the purpose of this paper we only use the run workloads experiment. You can additionally modify the range query rates (line 23) and update rates (line 24) tested in the run workloads method.
 + `runscript.sh` defines the length of runs (line 39) and the number of trials (line 9). As noted in the paper, we run 5 trials for 3 seconds long for each configuration of data structure, range query technique, and timestamp type.
 
 **Output**
 
-As stated previously, the microbenchmark saves data under `./microbench/data`. This raw data is used by the plotting script, but is first translated to a .csv file that is also stored in the subdirectory corresponding to each experiment in `experiment_list_generate.sh`. Upon running `plot.py` with the argument `--save_plots`, the generated graphs will be stored in `./figures` (again, in the corresponding subdirectories).
+As stated previously, the microbenchmark saves data under `microbench/data`. This raw data is used by the plotting script, but is first translated to a .csv file that is also stored in the subdirectory corresponding to each experiment in `experiment_list_generate.sh`. Upon running `plot.py` with the argument `--save_plots`, the generated graphs will be stored in `figures` (again, in the corresponding subdirectories).
