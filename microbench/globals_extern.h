@@ -78,7 +78,9 @@ extern int TOTAL_THREADS;
  * Configure record manager: reclaimer, allocator and pool
  */
 
-#define RECLAIM reclaimer_debra<test_type>
+#pragma message "Using reclaimer none vs debra"
+#define RECLAIM reclaimer_none<test_type>
+//#define RECLAIM reclaimer_debra<test_type>
 #define ALLOC allocator_new_segregated<test_type>
 #define POOL pool_none<test_type>
 
