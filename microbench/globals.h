@@ -29,6 +29,7 @@ bool PREFILL;
 int WORK_THREADS;
 int RQ_THREADS;
 int TOTAL_THREADS;
+float ZIPF;
 
 /**
  * Configure global statistics using stats_global.h and stats.h

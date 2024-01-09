@@ -221,6 +221,7 @@ void prefill(DS_DECLARATION *ds) {
     for (int i = 0; i < TOTAL_THREADS; ++i) {
       ids[i] = i;
       glob.rngs[i * PREFETCH_SIZE_WORDS].setSeed(rand());
+      glob.rngs[i * PREFETCH_SIZE_WORDS].setTheta(MAXKEY, ZIPF);
     }
 
     // start all threads
@@ -402,7 +403,7 @@ void *thread_timed(void *_id) {
 
     VERBOSE if (cnt && ((cnt % 1000000) == 0))
         COUTATOMICTID("op# " << cnt << endl);
-    int key = rng->nextNatural(MAXKEY);
+    int key = isnan(ZIPF) ? rng->nextNatural(MAXKEY) : rng->nextZipf(MAXKEY);
     double op = rng->nextNatural(100000000) / 1000000.;
     if (op < INS) {
       GSTATS_TIMER_RESET(tid, timer_latency);
@@ -431,7 +432,7 @@ void *thread_timed(void *_id) {
       GSTATS_TIMER_APPEND_ELAPSED(tid, timer_latency, latency_updates);
       GSTATS_ADD(tid, num_updates, 1);
     } else if (op < INS + DEL + RQ) {
-      unsigned _key = rng->nextNatural() % max(1, MAXKEY - RQSIZE);
+      unsigned _key = isnan(ZIPF) ? rng->nextNatural() % max(1, MAXKEY - RQSIZE) : rng->nextZipf(MAXKEY) % max(1, MAXKEY - RQSIZE);
       assert(_key >= 0);
       assert(_key < MAXKEY);
       assert(_key < max(1, MAXKEY - RQSIZE));
@@ -480,6 +481,10 @@ void *thread_timed(void *_id) {
 }
 
 void *thread_rq(void *_id) {
+
+  printf("Don't use dedicated threads in the comparison\n");
+  exit(1);
+
   int tid = *((int *)_id);
   binding_bindThread(tid, LOGICAL_PROCESSORS);
   test_type garbage = 0;
@@ -891,6 +896,7 @@ int main(int argc, char **argv) {
   INS = 10;
   DEL = 10;
   MAXKEY = 100000;
+  ZIPF = NAN;
 
   // read command line args
   // example args: -i 25 -d 25 -k 10000 -rq 0 -rqsize 1000 -p -t 1000 -nrq 0
@@ -918,6 +924,8 @@ int main(int argc, char **argv) {
                0) {                    // e.g., "-bind 1,2,3,8-11,4-7,0"
       binding_parseCustom(argv[++i]);  // e.g., "1,2,3,8-11,4-7,0"
       cout << "parsed custom binding: " << argv[i] << endl;
+    } else if (strcmp(argv[i], "-z") == 0) { 
+      ZIPF = atof(argv[++i]); 
     } else {
       cout << "bad argument " << argv[i] << endl;
       exit(1);
@@ -942,6 +950,7 @@ int main(int argc, char **argv) {
   PRINTI(MAXKEY);
   PRINTI(WORK_THREADS);
   PRINTI(RQ_THREADS);
+  PRINTI(ZIPF);
 
 // TODO: Find a way to keep strategy specific code out of main.
 #ifdef RQ_BUNDLE

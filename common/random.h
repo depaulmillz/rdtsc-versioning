@@ -5,12 +5,29 @@
  * 
  */
 
+#include <cfloat>
+#include <cmath>
+
 #ifndef RANDOM_H
 #define	RANDOM_H
+
+inline float zeta(float theta, int n) {
+  float sum = 0;
+  for (int i = 1; i <= n; i++) {
+      sum += 1 / (std::pow(i, theta));
+  }
+  return sum;
+}
 
 class Random {
 private:
     unsigned int seed;
+
+    float theta;
+    float zetaN;
+    float alpha;
+    float eta;
+
 public:
     Random(void) {
         this->seed = 0;
@@ -21,6 +38,24 @@ public:
     
     void setSeed(int seed) {
         this->seed = seed;
+    }
+
+    void setTheta(int n, float theta_) {
+      theta = theta_;
+      zetaN = zeta(theta, n + 1);
+      alpha = 1.0f / (1.0f - theta);
+
+      eta = (1.0f - powf(2.0f / (n + 1.0f), 1.0f - theta)) 
+            / (1.0f - zeta(theta, 2) / zetaN);
+    }
+
+    int nextZipf(int n) {
+      float u = nextNatural(1000000) / 1000000.0f;
+      float uz = u * zetaN;
+
+      if(uz < 1) return 0;
+      if(uz < 1 + powf(0.5f, theta)) return 1;
+      return (n + 1.0f) * powf(eta * u - eta + 1.0f, alpha);
     }
 
     /** returns pseudorandom x satisfying 0 <= x < n. **/
